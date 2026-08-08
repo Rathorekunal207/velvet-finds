@@ -123,68 +123,18 @@ exports.handler = async function (event) {
   }
 
   /* ── Read credentials ── */
-  const accessKey  = process.env.AMAZON_ACCESS_KEY;
-  const secretKey  = process.env.AMAZON_SECRET_KEY;
+  const accessKey  = process.env.AMAZON_CREATOR_CLIENT_ID || process.env.AMAZON_ACCESS_KEY;
+  const secretKey  = process.env.AMAZON_CREATOR_CLIENT_SECRET || process.env.AMAZON_SECRET_KEY;
   const partnerTag = process.env.AMAZON_PARTNER_TAG;
   const region     = process.env.AMAZON_REGION || 'us-east-1';
 
-  /* ── Graceful degradation when credentials are not set ──
-     Returns clearly-labelled demo data so the admin UI still works locally
-     without Netlify environment variables configured.                      */
+  /* ── Strict requirement for credentials ── */
   if (!accessKey || !secretKey || !partnerTag) {
-    console.warn('[amazonSearch] Missing Amazon API credentials — returning demo data.');
-    const keyword = (event.queryStringParameters && event.queryStringParameters.keyword) || 'home decor';
-    const category = (event.queryStringParameters && event.queryStringParameters.category) || 'Home Decor';
-
-    const demoProducts = [
-      {
-        asin: 'B0DEMO0001',
-        title: `[DEMO] ${keyword} — Premium Product 1`,
-        image: 'https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=400&q=80',
-        price: 1299,
-        originalPrice: 1799,
-        availability: 'In Stock',
-        affiliateLink: `https://www.amazon.in/dp/B0DEMO0001?tag=${partnerTag || 'velvetfinds-21'}`,
-        category: category,
-        brand: 'Demo Brand',
-        rating: 4.5,
-        reviews: 128,
-        isDemo: true,
-      },
-      {
-        asin: 'B0DEMO0002',
-        title: `[DEMO] ${keyword} — Bestseller Pick`,
-        image: 'https://images.unsplash.com/photo-1513519245088-0e12902e5a38?w=400&q=80',
-        price: 849,
-        originalPrice: 1199,
-        availability: 'In Stock',
-        affiliateLink: `https://www.amazon.in/dp/B0DEMO0002?tag=${partnerTag || 'velvetfinds-21'}`,
-        category: category,
-        brand: 'Demo Brand',
-        rating: 4.7,
-        reviews: 342,
-        isDemo: true,
-      },
-      {
-        asin: 'B0DEMO0003',
-        title: `[DEMO] ${keyword} — Editor's Pick`,
-        image: 'https://images.unsplash.com/photo-1631049307264-da0ec9d70304?w=400&q=80',
-        price: 2199,
-        originalPrice: null,
-        availability: 'In Stock',
-        affiliateLink: `https://www.amazon.in/dp/B0DEMO0003?tag=${partnerTag || 'velvetfinds-21'}`,
-        category: category,
-        brand: 'Demo Brand',
-        rating: 4.8,
-        reviews: 89,
-        isDemo: true,
-      },
-    ];
-
+    console.error('[amazonSearch] Missing Amazon API credentials (AMAZON_CREATOR_CLIENT_ID, etc.).');
     return {
-      statusCode: 200,
+      statusCode: 400,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ products: demoProducts, demo: true }),
+      body: JSON.stringify({ error: 'Amazon API credentials are not configured.', code: 'NOT_CONFIGURED' }),
     };
   }
 
@@ -291,7 +241,8 @@ exports.handler = async function (event) {
     const rating   = item.CustomerReviews && item.CustomerReviews.StarRating && item.CustomerReviews.StarRating.Value;
     const reviews  = item.CustomerReviews && item.CustomerReviews.Count && item.CustomerReviews.Count.Value;
 
-    const affiliateLink = `https://www.amazon.in/dp/${asin}?tag=${partnerTag}&linkCode=ogi&th=1&psc=1`;
+    // Use official DetailPageURL if provided, else construct standard affiliate link
+    const affiliateLink = item.DetailPageURL || `https://www.amazon.in/dp/${asin}?tag=${partnerTag}&linkCode=ogi&th=1&psc=1`;
 
     return {
       asin,

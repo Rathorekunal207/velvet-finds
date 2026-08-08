@@ -558,6 +558,30 @@
         </div>
 
         <div class="settings-section">
+          <h3>🛒 Amazon Affiliate Integration</h3>
+          <div class="form-grid" style="margin-bottom: 12px;">
+            <div class="form-group full">
+              <label>API Connection Status</label>
+              <div id="amzStatus" style="font-family:monospace; padding:12px; background:rgba(0,0,0,0.2); border-radius:8px; border:1px solid rgba(255,255,255,0.1); margin-top:4px;">
+                Checking...
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Marketplace</label>
+              <input class="admin-input" id="amzMarketplace" style="width:100%;margin-bottom:0;" disabled>
+            </div>
+            <div class="form-group">
+              <label>Partner Tag</label>
+              <input class="admin-input" id="amzPartnerTag" style="width:100%;margin-bottom:0;" disabled>
+            </div>
+          </div>
+          <div class="btn-row" style="margin-top:16px;">
+            <button class="admin-btn-sm abt-ghost" onclick="testAmazonConnection()">🔄 Test Connection</button>
+          </div>
+          <div id="amzTestResult" style="font-size:13px; margin-top:10px; color:rgba(232,228,240,0.6);"></div>
+        </div>
+
+        <div class="settings-section">
           <h3>🔐 Change Admin Password</h3>
           <div class="form-grid">
             <div class="form-group">
@@ -1383,6 +1407,56 @@
     setTimeout(() => t.classList.remove('show'), 3200);
   }
 
+  function fnUrl(name) {
+    return (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+      ? `http://localhost:8888/.netlify/functions/${name}`
+      : `/.netlify/functions/${name}`;
+  }
+
+  /* ══ AMAZON SETTINGS UI ══════════════════════════════════════ */
+  async function testAmazonConnection() {
+    const statusEl = document.getElementById('amzStatus');
+    const resultEl = document.getElementById('amzTestResult');
+    const mpEl = document.getElementById('amzMarketplace');
+    const tagEl = document.getElementById('amzPartnerTag');
+    
+    if(!statusEl) return;
+    
+    statusEl.innerHTML = '<span style="color:#e3c98a;">Checking...</span>';
+    resultEl.innerHTML = '';
+    
+    try {
+      const res = await fetch(fnUrl('amazonStatus?test=true'));
+      const data = await res.json();
+      
+      let color = '#fff';
+      if (data.status === 'CONNECTED') color = '#4caf50';
+      if (data.status === 'NOT CONFIGURED') color = '#f44336';
+      if (data.status === 'RATE LIMITED') color = '#ff9800';
+      if (data.status === 'AUTHENTICATION FAILED') color = '#f44336';
+      
+      statusEl.innerHTML = `<span style="color:${color}; font-weight:bold;">${data.status}</span><br><span style="font-size:11px; color:rgba(255,255,255,0.5);">${data.message}</span>`;
+      mpEl.value = data.marketplace || 'www.amazon.in';
+      tagEl.value = data.partnerTag || 'Not set';
+      
+      if (data.testResult) {
+        resultEl.innerHTML = `Test call result: <span style="color:${data.testResult.status === 'SUCCESS' ? '#4caf50' : '#f44336'}">${data.testResult.message}</span>`;
+      }
+    } catch(err) {
+      statusEl.innerHTML = `<span style="color:#f44336; font-weight:bold;">ERROR</span>`;
+      resultEl.innerHTML = `Failed to reach backend: ${err.message}`;
+    }
+  }
+
+  // Hook into showTab to load Amazon status when settings tab is opened
+  const originalShowTab = window.showTab;
+  window.showTab = function(tabId) {
+    originalShowTab(tabId);
+    if (tabId === 'settings') {
+      testAmazonConnection();
+    }
+  };
+
   /* ═══════════════════════════════════════════════════════════
      ─── AMAZON INDIA AFFILIATE PRODUCT IMPORT SYSTEM ──────────
      All Amazon API calls go through Netlify Functions (server-side).
@@ -1404,18 +1478,6 @@
     return '₹' + Number(p).toLocaleString('en-IN');
   }
 
-  /* ── Helper: Determine if we're running through Netlify ──── */
-  function isNetlify() {
-    return window.location.hostname !== 'localhost' &&
-           !window.location.protocol.startsWith('file');
-  }
-
-  /* ── Helper: Build function URL ─────────────────────────── */
-  function fnUrl(name) {
-    if (isNetlify()) return `/.netlify/functions/${name}`;
-    // In local file mode, simulate with the local functions stub
-    return `/.netlify/functions/${name}`;
-  }
 
   /* ══ SEARCH AMAZON ════════════════════════════════════════════ */
   async function runAmazonSearch() {
@@ -1803,8 +1865,9 @@
       const res  = await fetch(fnUrl('amazonDiscovery'));
       const data = await res.json();
 
-      if (data.message) {
-        // No credentials configured
+      if (data.code === 'NOT_CONFIGURED') {
+        toast(`⚠️ Amazon API not configured. Please check Settings.`, true);
+      } else if (data.message && !data.products) {
         toast(`ℹ️ ${data.message}`, true);
       } else {
         toast(`🤖 Discovery complete! ${data.discovered} new product${data.discovered !== 1 ? 's' : ''} added to Pending (${data.skipped} skipped as duplicates).`);

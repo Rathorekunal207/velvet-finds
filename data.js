@@ -243,6 +243,7 @@ const VF = (() => {
     }
     product.id    = 'amz_' + Date.now() + '_' + Math.random().toString(36).substring(2, 5);
     product.createdAt  = new Date().toISOString();
+    product.importedAt = new Date().toISOString();
     product.status     = 'pending';
     product.store      = 'Amazon';
     all.push(product);

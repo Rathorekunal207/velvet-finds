@@ -115,7 +115,7 @@ async function searchAmazon({ keyword, category, partnerTag, accessKey, secretKe
       price:         priceObj && priceObj.Amount ? Math.round(priceObj.Amount) : null,
       originalPrice: null,
       availability:  listing && listing.Availability && listing.Availability.Message || 'Check on Amazon',
-      affiliateLink: `https://www.amazon.in/dp/${item.ASIN}?tag=${partnerTag}&linkCode=ogi&th=1&psc=1`,
+      affiliateLink: item.DetailPageURL || `https://www.amazon.in/dp/${item.ASIN}?tag=${partnerTag}&linkCode=ogi&th=1&psc=1`,
       category,
       brand:         item.ItemInfo && item.ItemInfo.ByLineInfo && item.ItemInfo.ByLineInfo.Brand && item.ItemInfo.ByLineInfo.Brand.DisplayValue,
       rating:        item.CustomerReviews && item.CustomerReviews.StarRating ? parseFloat(item.CustomerReviews.StarRating.Value) : 4.5,
@@ -142,8 +142,8 @@ exports.handler = async function (event) {
   };
   if (event.httpMethod === 'OPTIONS') return { statusCode: 200, headers: corsHeaders, body: '' };
 
-  const accessKey  = process.env.AMAZON_ACCESS_KEY;
-  const secretKey  = process.env.AMAZON_SECRET_KEY;
+  const accessKey  = process.env.AMAZON_CREATOR_CLIENT_ID || process.env.AMAZON_ACCESS_KEY;
+  const secretKey  = process.env.AMAZON_CREATOR_CLIENT_SECRET || process.env.AMAZON_SECRET_KEY;
   const partnerTag = process.env.AMAZON_PARTNER_TAG;
   const region     = process.env.AMAZON_REGION || 'us-east-1';
   const binId      = process.env.BIN_ID;
@@ -158,7 +158,8 @@ exports.handler = async function (event) {
         discovered: 0,
         skipped: 0,
         products: [],
-        message: 'Amazon API credentials not configured. Set AMAZON_ACCESS_KEY, AMAZON_SECRET_KEY, AMAZON_PARTNER_TAG in Netlify environment variables.',
+        message: 'Amazon API credentials not configured. Please configure AMAZON_CREATOR_CLIENT_ID, AMAZON_CREATOR_CLIENT_SECRET, and AMAZON_PARTNER_TAG in Netlify environment variables.',
+        code: 'NOT_CONFIGURED'
       }),
     };
   }
@@ -218,6 +219,8 @@ exports.handler = async function (event) {
           savedCount: '0',
           gradient:   'linear-gradient(160deg,#e9c9c2,#3d2144)',
           createdAt:  new Date().toISOString(),
+          importedAt: new Date().toISOString(),
+          updatedAt:  new Date().toISOString(),
           importedBy: 'discovery',
         };
         newProducts.push(newProd);

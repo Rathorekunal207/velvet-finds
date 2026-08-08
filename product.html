@@ -101,10 +101,10 @@
 <footer>
   <div class="wrap">
     <div class="foot-bottom" style="padding-top:24px;">
-      <span style="font-size:12.5px; color:var(--ink-soft);">© 2026 Velvet FINDS. Affiliate disclosure: We earn from qualifying purchases at no extra cost to you.</span>
+      <span style="font-size:12.5px; color:var(--ink-soft);">© 2026 Velvet FINDS. As an Amazon Associate I earn from qualifying purchases. <a href="admin.html" style="color:var(--gold-500); margin-left:8px; font-weight:700;">⚙ Admin</a></span>
       <div class="foot-social">
-        <a href="#" title="Pinterest" id="footPinBtn" target="_blank">📌</a>
-        <a href="#" title="Instagram" id="footInstaBtn" target="_blank">📷</a>
+        <a href="#" title="Pinterest" id="footPinBtn" target="_blank" rel="nofollow sponsored noopener">📌</a>
+        <a href="#" title="Instagram" id="footInstaBtn" target="_blank" rel="nofollow sponsored noopener">📷</a>
         <a href="#" title="Email">✉</a>
       </div>
     </div>
@@ -311,7 +311,7 @@
               </ul>
 
               <!-- BUY BUTTON -->
-              <a href="${product.affiliateLink}" target="_blank" rel="noopener sponsored"
+              <a href="${product.affiliateLink}" target="_blank" rel="nofollow sponsored noopener"
                  class="buy-btn ${buyBtnClass}"
                  onclick="VF.recordProductClick('${product.id}');"
                  id="mainBuyBtn">
@@ -319,7 +319,8 @@
               </a>
 
               <div style="text-align:center; font-size:12px; color:var(--ink-soft); margin-top:10px; margin-bottom:16px;">
-                ⚡ Best price verified · Free delivery available · Affiliate link — we may earn a small commission
+                ⚡ Best price verified · Free delivery available<br>
+                <span style="opacity:0.75; font-style:italic;">As an Amazon Associate I earn from qualifying purchases.</span>
               </div>
 
               <!-- Ratings breakdown -->
