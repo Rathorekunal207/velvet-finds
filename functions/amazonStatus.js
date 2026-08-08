@@ -93,7 +93,7 @@ exports.handler = async function (event) {
         }
       } catch (err) {
         status = 'ERROR';
-        testResult = { status: 'ERROR', message: 'Network error reaching Amazon API.', details: err.message };
+        testResult = { status: 'ERROR', message: err.message, details: err.message };
       }
     }
   }
