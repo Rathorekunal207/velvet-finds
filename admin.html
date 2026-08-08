@@ -1,0 +1,1920 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Panel — Velvet FINDS</title>
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    body { background:#111318; }
+    .page { display:none; }
+    .page.active { display:block; }
+    /* Inline overrides for admin dark card */
+    .product-admin-card { background:rgba(255,255,255,.03); border:1px solid rgba(255,255,255,.07); border-radius:14px; padding:18px 20px; display:flex; align-items:center; gap:16px; margin-bottom:12px; }
+    .pac-thumb { width:52px; height:52px; border-radius:10px; flex-shrink:0; }
+    .pac-info { flex:1; min-width:0; }
+    .pac-info .pname { font-size:14px; font-weight:700; color:#f5edd8; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .pac-info .pmeta { font-size:12px; color:rgba(232,228,240,.45); margin-top:3px; }
+    .pac-actions { display:flex; gap:8px; flex-shrink:0; }
+    .search-admin { background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.1); border-radius:10px; padding:11px 16px; color:#e8e4f0; font-family:var(--font-sans); font-size:14px; outline:none; width:100%; max-width:360px; margin-bottom:20px; }
+    .search-admin::placeholder { color:rgba(232,228,240,.35); }
+    .search-admin:focus { border-color:#c9a15a; }
+    .gradient-picker { display:grid; grid-template-columns:repeat(6,1fr); gap:8px; margin-top:8px; }
+    .gp-opt { height:32px; border-radius:8px; cursor:pointer; border:2px solid transparent; transition:all .2s; }
+    .gp-opt.selected { border-color:#fff; transform:scale(1.08); }
+    #gradientPreview { width:100%; height:60px; border-radius:10px; border:1px solid rgba(255,255,255,.1); margin-top:8px; transition:background .3s; }
+    .device-bars { display:flex; flex-direction:column; gap:12px; }
+    .dev-bar-row { display:flex; align-items:center; gap:12px; font-size:13.5px; }
+    .dev-bar-track { flex:1; height:10px; background:rgba(255,255,255,.08); border-radius:999px; overflow:hidden; }
+    .dev-bar-fill { height:100%; border-radius:999px; }
+    .country-row { display:flex; align-items:center; gap:14px; padding:10px 0; border-bottom:1px solid rgba(255,255,255,.05); font-size:13.5px; }
+    .country-row:last-child { border-bottom:none; }
+    .country-pct { margin-left:auto; font-weight:700; color:#e3c98a; }
+    .top-products-wrap { display:flex; flex-direction:column; gap:10px; }
+    .top-prod-item { display:flex; align-items:center; gap:14px; padding:12px 16px; background:rgba(255,255,255,.03); border-radius:12px; border:1px solid rgba(255,255,255,.06); }
+    .top-prod-item .rank { font-family:var(--font-serif); font-size:22px; color:rgba(232,228,240,.2); font-weight:600; width:30px; flex-shrink:0; }
+    .top-prod-thumb { width:42px; height:42px; border-radius:8px; flex-shrink:0; }
+    .top-prod-info { flex:1; }
+    .top-prod-info .pn { font-size:14px; font-weight:700; color:#f5edd8; }
+    .top-prod-info .pm { font-size:12px; color:rgba(232,228,240,.4); margin-top:2px; }
+    .click-count { font-size:22px; font-weight:800; color:#e3c98a; font-family:var(--font-serif); }
+
+    /* ─── Amazon Import Tab Styles ─────────────────────────── */
+    .amz-quick-btn {
+      padding:7px 14px; border-radius:999px; font-size:12px; font-weight:700;
+      background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.1);
+      color:rgba(232,228,240,.7); cursor:pointer; transition:all .2s;
+    }
+    .amz-quick-btn:hover { background:rgba(201,161,90,.15); border-color:rgba(201,161,90,.4); color:#e3c98a; }
+
+    .amz-filter-tab {
+      padding:8px 18px; border-radius:999px; font-size:13px; font-weight:700;
+      background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.08);
+      color:rgba(232,228,240,.5); cursor:pointer; transition:all .2s;
+    }
+    .amz-filter-tab.active { background:rgba(201,161,90,.18); border-color:rgba(201,161,90,.5); color:#e3c98a; }
+
+    /* Amazon search result card */
+    .amz-result-card {
+      background:rgba(255,255,255,.03); border:1px solid rgba(255,255,255,.07);
+      border-radius:14px; overflow:hidden; transition:transform .2s, border-color .2s;
+    }
+    .amz-result-card:hover { transform:translateY(-3px); border-color:rgba(201,161,90,.3); }
+    .amz-result-card img { width:100%; height:180px; object-fit:contain; background:#fff; display:block; }
+    .amz-result-card .arc-body { padding:14px; }
+    .amz-result-card .arc-title { font-size:13px; font-weight:700; color:#f5edd8; line-height:1.4; margin-bottom:6px; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+    .amz-result-card .arc-price { font-size:17px; font-weight:800; color:#e3c98a; margin-bottom:4px; }
+    .amz-result-card .arc-meta  { font-size:11px; color:rgba(232,228,240,.4); margin-bottom:12px; }
+    .amz-result-card .arc-asin  { font-size:10px; color:rgba(232,228,240,.25); font-family:monospace; }
+    .amz-result-card .arc-actions { display:flex; gap:8px; }
+    .amz-result-card .arc-import-btn {
+      flex:1; padding:9px 12px; border-radius:8px; font-size:12px; font-weight:700;
+      background:linear-gradient(135deg,#e3c98a,#c9a15a); color:#2b1730; border:none; cursor:pointer; transition:all .2s;
+    }
+    .amz-result-card .arc-import-btn:disabled { opacity:.4; cursor:not-allowed; }
+    .amz-result-card .arc-preview-btn {
+      padding:9px 12px; border-radius:8px; font-size:12px; font-weight:700;
+      background:rgba(255,255,255,.06); color:rgba(232,228,240,.7); border:1px solid rgba(255,255,255,.1); cursor:pointer; transition:all .2s;
+    }
+    .amz-result-card .arc-preview-btn:hover { background:rgba(255,255,255,.1); }
+    .amz-dup-badge { font-size:10px; font-weight:800; letter-spacing:.5px; padding:3px 8px; border-radius:999px; background:rgba(229,57,53,.15); color:#ef9a9a; border:1px solid rgba(229,57,53,.25); text-transform:uppercase; }
+
+    /* Pending product card */
+    .amz-pending-card {
+      background:rgba(255,255,255,.03); border:1px solid rgba(255,255,255,.07);
+      border-radius:14px; padding:18px 20px; display:flex; align-items:flex-start; gap:16px;
+      margin-bottom:12px; transition:border-color .2s;
+    }
+    .amz-pending-card:hover { border-color:rgba(201,161,90,.25); }
+    .amz-pending-card .apc-thumb { width:64px; height:64px; border-radius:10px; flex-shrink:0; object-fit:contain; background:#fff; }
+    .amz-pending-card .apc-thumb-placeholder { width:64px; height:64px; border-radius:10px; flex-shrink:0; display:flex; align-items:center; justify-content:center; background:rgba(255,255,255,.05); font-size:24px; }
+    .amz-pending-card .apc-info { flex:1; min-width:0; }
+    .amz-pending-card .apc-title { font-size:14px; font-weight:700; color:#f5edd8; line-height:1.4; margin-bottom:5px; }
+    .amz-pending-card .apc-meta  { font-size:12px; color:rgba(232,228,240,.4); margin-bottom:8px; display:flex; gap:10px; flex-wrap:wrap; }
+    .amz-pending-card .apc-price { font-size:15px; font-weight:800; color:#e3c98a; }
+    .amz-pending-card .apc-actions { display:flex; gap:8px; flex-direction:column; flex-shrink:0; }
+    .amz-approve-btn {
+      padding:9px 18px; border-radius:8px; font-size:13px; font-weight:800;
+      background:linear-gradient(135deg,#2e7d32,#43a047); color:#fff; border:none; cursor:pointer; transition:all .2s;
+      display:flex; align-items:center; gap:6px; white-space:nowrap;
+    }
+    .amz-approve-btn:hover { background:linear-gradient(135deg,#43a047,#66bb6a); transform:scale(1.02); }
+    .amz-reject-btn {
+      padding:9px 18px; border-radius:8px; font-size:13px; font-weight:800;
+      background:rgba(229,57,53,.12); color:#ef9a9a; border:1px solid rgba(229,57,53,.25); cursor:pointer; transition:all .2s;
+      white-space:nowrap;
+    }
+    .amz-reject-btn:hover { background:rgba(229,57,53,.22); }
+    .amz-preview-link-btn {
+      padding:7px 12px; border-radius:8px; font-size:12px; font-weight:700;
+      background:rgba(255,255,255,.05); color:rgba(232,228,240,.5); border:1px solid rgba(255,255,255,.08); cursor:pointer; text-align:center; white-space:nowrap;
+    }
+    .status-badge {
+      display:inline-flex; align-items:center; gap:5px; padding:3px 10px; border-radius:999px;
+      font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:.5px;
+    }
+    .status-pending  { background:rgba(255,160,0,.12); color:#ffb300; border:1px solid rgba(255,160,0,.25); }
+    .status-published{ background:rgba(46,125,50,.15); color:#81c784; border:1px solid rgba(46,125,50,.3); }
+    .status-rejected { background:rgba(229,57,53,.12); color:#ef9a9a; border:1px solid rgba(229,57,53,.2); }
+
+    /* Loading shimmer for amazon cards */
+    .amz-shimmer { border-radius:14px; background:linear-gradient(90deg,rgba(255,255,255,.04) 25%,rgba(255,255,255,.09) 50%,rgba(255,255,255,.04) 75%); background-size:200% 100%; animation:amzShimmer 1.5s infinite; height:280px; }
+    @keyframes amzShimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
+
+    /* Preview modal styles */
+    .amz-preview-img { width:100%; max-height:280px; object-fit:contain; background:#fff; display:block; }
+    .amz-preview-body { padding:24px; }
+    .amz-preview-title { font-family:var(--font-serif); font-size:22px; font-weight:450; color:#f5edd8; line-height:1.4; margin-bottom:12px; }
+    .amz-preview-price { font-size:28px; font-weight:800; color:#e3c98a; margin-bottom:8px; }
+    .amz-preview-meta { font-size:13px; color:rgba(232,228,240,.45); margin-bottom:16px; display:flex; gap:14px; flex-wrap:wrap; }
+    .amz-preview-afflink { display:block; font-size:11px; font-family:monospace; color:rgba(232,228,240,.25); word-break:break-all; margin-top:12px; padding:10px; background:rgba(0,0,0,.2); border-radius:8px; }
+  </style>
+</head>
+<body class="admin-body">
+<script src="data.js"></script>
+
+<!-- ==================== LOGIN PAGE ==================== -->
+<div class="page active" id="loginPage">
+  <div class="admin-login">
+    <div class="login-card">
+      <div class="logo-wrap"><img src="velvet-finds-logo.jpeg" alt="Velvet FINDS admin"></div>
+      <h2>Velvet FINDS</h2>
+      <p>Admin Panel — Enter your password</p>
+      <input class="admin-input" type="password" id="passwordInput" placeholder="Enter admin password" onkeydown="if(event.key==='Enter')doLogin()">
+      <button class="admin-btn admin-btn-gold" onclick="doLogin()">🔐 Login to Admin</button>
+      <div class="admin-error" id="loginError"></div>
+      <p style="font-size:11px; color:rgba(232,228,240,.25); margin-top:18px;">Default password: <code>velvetadmin</code> — change it in Settings</p>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== ADMIN DASHBOARD ==================== -->
+<div class="page" id="adminPage">
+  <div class="admin-layout">
+
+    <!-- SIDEBAR -->
+    <aside class="admin-sidebar">
+      <div class="brand">
+        <img src="velvet-finds-logo.jpeg" alt="logo">
+        <div>
+          <span>Velvet FINDS</span>
+          <small>Admin Panel</small>
+        </div>
+      </div>
+      <span class="nav-section">Analytics</span>
+      <div class="nav-item active" id="nav-overview" onclick="showTab('overview')">
+        <span class="icon">📊</span> Overview
+      </div>
+      <div class="nav-item" id="nav-products-analytics" onclick="showTab('products-analytics')">
+        <span class="icon">🔥</span> Product Clicks
+      </div>
+      <div class="nav-item" id="nav-visitors" onclick="showTab('visitors')">
+        <span class="icon">👥</span> Visitors
+      </div>
+
+      <span class="nav-section">Content</span>
+      <div class="nav-item" id="nav-products" onclick="showTab('products')">
+        <span class="icon">🛍️</span> Products
+      </div>
+      <div class="nav-item" id="nav-add" onclick="showTab('add')">
+        <span class="icon">➕</span> Add Product
+      </div>
+      <div class="nav-item" id="nav-blogs" onclick="showTab('blogs')">
+        <span class="icon">📝</span> Manage Blogs
+      </div>
+      <div class="nav-item" id="nav-add-blog" onclick="showTab('add-blog')">
+        <span class="icon">✍️</span> Add Blog Post
+      </div>
+      <div class="nav-item" id="nav-categories" onclick="showTab('categories')">
+        <span class="icon">📂</span> Shop by Category
+      </div>
+      <div class="nav-item" id="nav-amazon" onclick="showTab('amazon')">
+        <span class="icon">🛒</span> Amazon Import
+      </div>
+
+      <span class="nav-section">Settings</span>
+      <div class="nav-item" id="nav-settings" onclick="showTab('settings')">
+        <span class="icon">⚙️</span> Site Settings
+      </div>
+      <div class="nav-item" onclick="window.open('index.html','_blank')">
+        <span class="icon">🌐</span> View Website
+      </div>
+
+      <div class="sidebar-logout">
+        <button onclick="doLogout()">⬅ Logout</button>
+      </div>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <main class="admin-main">
+
+      <!-- ─── OVERVIEW TAB ─── -->
+      <div class="tab-pane active" id="tab-overview">
+        <h1>Dashboard Overview</h1>
+        <p class="subtitle">Your website performance at a glance.</p>
+
+        <!-- Stat Cards -->
+        <div class="stats-grid" id="statsGrid"></div>
+
+        <!-- Visit Chart -->
+        <div class="chart-wrap">
+          <h3>📈 Visits — Last 30 Days</h3>
+          <div class="mini-chart" id="visitChart"></div>
+          <div style="display:flex; gap:0; margin-top:6px; font-size:10px; color:rgba(232,228,240,.3); padding:0 4px;">
+            <span style="flex:1;text-align:left;">30d ago</span>
+            <span style="flex:1;text-align:center;">15d ago</span>
+            <span style="flex:1;text-align:right;">Today</span>
+          </div>
+        </div>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px;">
+          <!-- Device Analytics -->
+          <div class="chart-wrap">
+            <h3>📱 Device Breakdown</h3>
+            <div class="device-bars" id="deviceBars"></div>
+          </div>
+          <!-- Top Countries -->
+          <div class="chart-wrap">
+            <h3>🌍 Traffic by Country</h3>
+            <div id="countryList"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ─── PRODUCT CLICKS TAB ─── -->
+      <div class="tab-pane" id="tab-products-analytics">
+        <h1>Product Clicks</h1>
+        <p class="subtitle">Most clicked products across your website.</p>
+        <div class="top-products-wrap" id="topProductsList"></div>
+      </div>
+
+      <!-- ─── VISITORS TAB ─── -->
+      <div class="tab-pane" id="tab-visitors">
+        <h1>Visitor Analytics</h1>
+        <p class="subtitle">Detailed visitor and session data.</p>
+        <div class="stats-grid" id="visitorStats"></div>
+        <div class="world-map-placeholder" style="margin-top:20px;">
+          <div style="font-size:42px; margin-bottom:12px;">🌏</div>
+          <strong style="color:rgba(232,228,240,.5);">Geographic Map</strong><br>
+          Connect Google Analytics to enable real geographic tracking.<br>
+          <a href="https://analytics.google.com" target="_blank" style="color:#c9a15a; font-weight:700; margin-top:10px; display:inline-block;">→ Set up Google Analytics</a>
+        </div>
+      </div>
+
+      <!-- ─── PRODUCTS MANAGEMENT TAB ─── -->
+      <div class="tab-pane" id="tab-products">
+        <h1>Manage Products</h1>
+        <p class="subtitle">Edit, delete or view any product on your website.</p>
+        <input class="search-admin" id="productSearchAdmin" placeholder="🔍  Search products…" oninput="renderProductList(this.value)">
+        <div id="productListAdmin"></div>
+      </div>
+
+      <!-- ─── ADD / EDIT PRODUCT TAB ─── -->
+      <div class="tab-pane" id="tab-add">
+        <h1 id="editorTitle">Add New Product</h1>
+        <p class="subtitle">Fill in the details below. All fields marked * are required.</p>
+
+        <div class="editor-form">
+          <input type="hidden" id="editProductId">
+          <div class="form-grid">
+            <div class="form-group">
+              <label>Product Name *</label>
+              <input id="pName" placeholder="e.g. Rose Gold Facial Roller">
+            </div>
+            <div class="form-group">
+              <label>Category *</label>
+              <select id="pCategory">
+                <option>Fashion</option><option>Home Decor</option><option>Beauty</option>
+                <option>Tech Gadgets</option><option>Kitchen</option><option>Fitness</option>
+                <option>Travel</option><option>Gifts</option><option>Office Setup</option>
+                <option>Under ₹500</option><option>Baby & Pet</option><option>Premium Picks</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Price (₹) *</label>
+              <input id="pPrice" type="number" placeholder="1499">
+            </div>
+            <div class="form-group">
+              <label>Original Price (₹) <small style="opacity:.5;">for discount badge</small></label>
+              <input id="pOriginalPrice" type="number" placeholder="2199">
+            </div>
+            <div class="form-group">
+              <label>Rating (1–5)</label>
+              <input id="pRating" type="number" step="0.1" min="1" max="5" placeholder="4.8">
+            </div>
+            <div class="form-group">
+              <label>Reviews Count</label>
+              <input id="pReviews" type="number" placeholder="342">
+            </div>
+            <div class="form-group">
+              <label>Badge <small style="opacity:.5;">optional</small></label>
+              <input id="pBadge" placeholder="e.g. Bestseller, New, Editor's Pick">
+            </div>
+            <div class="form-group">
+              <label>Store *</label>
+              <select id="pStore">
+                <option>Amazon</option><option>Flipkart</option><option>Myntra</option>
+                <option>Ajio</option><option>Nykaa</option><option>Other</option>
+              </select>
+            </div>
+            <div class="form-group full" style="border:1px dashed rgba(255,255,255,0.15); padding:16px; border-radius:12px; background:rgba(255,255,255,0.02); margin-bottom:12px;">
+              <label style="font-weight:700; color:#e3c98a; display:flex; align-items:center; gap:8px;">🖼️ Product Image (Photo)</label>
+              <div id="imagePreviewContainer" style="display:none; align-items:center; gap:14px; margin-bottom:12px; margin-top:8px;">
+                <img id="imageUploadPreview" src="" style="width:80px; height:80px; object-fit:cover; border-radius:10px; border:1px solid rgba(255,255,255,0.2);">
+                <button type="button" class="admin-btn-sm abt-danger" onclick="deleteProductImage()" style="padding:6px 12px; font-size:12px; border-radius:6px; cursor:pointer;">🗑️ Delete Image</button>
+              </div>
+              <div style="margin-bottom:12px; margin-top:8px;">
+                <span style="font-size:12px; color:rgba(232,228,240,0.5); display:block; margin-bottom:4px;">Option A: Paste Image URL</span>
+                <input id="pImage" placeholder="https://example.com/product.jpg" oninput="handleImageUrlInput(this.value)" style="width:100%;">
+              </div>
+              <div>
+                <span style="font-size:12px; color:rgba(232,228,240,0.5); display:block; margin-bottom:4px;">Option B: Upload Photo from Computer</span>
+                <input type="file" id="pImageFile" accept="image/*" style="background:rgba(255,255,255,0.04); border:1px dashed rgba(255,255,255,0.15); padding:10px; border-radius:8px; width:100%; color:#f5edd8; outline:none; font-family:var(--font-sans);" onchange="handleImageUpload(this)">
+                <div id="imageUploadStatus" style="font-size:12px; margin-top:6px; font-weight:700;"></div>
+              </div>
+            </div>
+            <div class="form-group full">
+              <label>Affiliate Link * <small style="opacity:.5;">— the link visitors click to buy</small></label>
+              <input id="pAffiliateLink" placeholder="https://amazon.in/dp/XXXXXXXXXX?tag=yourtag-21">
+            </div>
+            <div class="form-group full">
+              <label>Description *</label>
+              <textarea id="pDescription" rows="4" placeholder="Write a compelling, honest description of this product…"></textarea>
+            </div>
+            <div class="form-group full">
+              <label>Features <small style="opacity:.5;">— one per line</small></label>
+              <textarea id="pFeatures" rows="5" placeholder="Premium quality fabric&#10;Machine washable&#10;Available in 6 colors&#10;Ships in 2-5 days"></textarea>
+            </div>
+            <div class="form-group">
+              <label>Card Height (px) <small style="opacity:.5;">varies masonry effect</small></label>
+              <input id="pHeight" type="number" placeholder="300" value="300">
+            </div>
+            <div class="form-group">
+              <label>Saves Count <small style="opacity:.5;">e.g. 1.2K</small></label>
+              <input id="pSaved" placeholder="1.2K">
+            </div>
+
+            <div class="form-group full">
+              <label>Card Gradient Color</label>
+              <div class="gradient-picker" id="gradPicker"></div>
+              <div id="gradientPreview"></div>
+              <input type="hidden" id="pGradient" value="linear-gradient(160deg,#e9c9c2,#3d2144)">
+            </div>
+          </div>
+          <div class="btn-row">
+            <button class="admin-btn-sm abt-gold" onclick="saveProduct()">💾 Save Product</button>
+            <button class="admin-btn-sm abt-ghost" onclick="clearForm()">✕ Clear Form</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ─── BLOGS MANAGEMENT TAB ─── -->
+      <div class="tab-pane" id="tab-blogs">
+        <h1>Manage Blog Posts</h1>
+        <p class="subtitle">Edit, delete or view any blog article on your website.</p>
+        <div style="display:flex; gap:12px; margin-bottom:20px; align-items:center;">
+          <input class="search-admin" id="blogSearchAdmin" placeholder="🔍 Search blog posts…" oninput="renderBlogListAdmin(this.value)" style="flex:1; margin:0;">
+          <button class="admin-btn-gold" style="padding:14px 24px; border-radius:12px; font-weight:700; cursor:pointer; border:none; white-space:nowrap;" onclick="showTab('add-blog'); clearBlogForm();">+ Add New Blog</button>
+        </div>
+        <div id="blogListAdmin"></div>
+      </div>
+
+      <!-- ─── ADD / EDIT BLOG TAB ─── -->
+      <div class="tab-pane" id="tab-add-blog">
+        <h1 id="blogEditorTitle">Add New Blog Post</h1>
+        <p class="subtitle">Create or edit a blog article. Fields marked * are required.</p>
+
+        <div class="editor-form">
+          <input type="hidden" id="editBlogId">
+          <div class="form-grid">
+            <div class="form-group full">
+              <label>Blog Title *</label>
+              <input id="bTitle" placeholder="e.g. 10 Stunning Home Decor Ideas to Transform Your Space" oninput="autoSlugBlog(this.value)">
+            </div>
+            <div class="form-group">
+              <label>URL Slug <small style="opacity:.5;">(auto-generated)</small></label>
+              <input id="bSlug" placeholder="e.g. 10-stunning-home-decor-ideas">
+            </div>
+            <div class="form-group">
+              <label>Category *</label>
+              <select id="bCategory">
+                <option>Home Decor</option><option>Bedroom</option><option>Living Room</option>
+                <option>Kitchen</option><option>Bathroom</option><option>Apartment Decor</option>
+                <option>Office</option><option>Storage</option><option>Gift Ideas</option>
+                <option>Outdoor</option><option>Smart Home</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Author</label>
+              <input id="bAuthor" placeholder="Velvet FINDS Team" value="Velvet FINDS Team">
+            </div>
+            <div class="form-group">
+              <label>Publish Date</label>
+              <input id="bDate" type="date">
+            </div>
+            <div class="form-group">
+              <label>Reading Time (minutes)</label>
+              <input id="bReadTime" type="number" placeholder="5" value="5">
+            </div>
+            <div class="form-group">
+              <label>Status *</label>
+              <select id="bStatus">
+                <option value="published">Published</option>
+                <option value="draft">Draft</option>
+              </select>
+            </div>
+
+            <!-- Cover Image Upload/URL -->
+            <div class="form-group full" style="border:1px dashed rgba(255,255,255,0.15); padding:16px; border-radius:12px; background:rgba(255,255,255,0.02); margin-bottom:12px;">
+              <label style="font-weight:700; color:#e3c98a; display:flex; align-items:center; gap:8px;">🖼️ Featured Cover Image</label>
+              <div id="blogImagePreviewContainer" style="display:none; align-items:center; gap:14px; margin-bottom:12px; margin-top:8px;">
+                <img id="blogImagePreview" src="" style="width:120px; height:70px; object-fit:cover; border-radius:10px; border:1px solid rgba(255,255,255,0.2);">
+                <button type="button" class="admin-btn-sm abt-danger" onclick="deleteBlogCoverImage()" style="padding:6px 12px; font-size:12px; border-radius:6px; cursor:pointer;">🗑️ Delete Image</button>
+              </div>
+              <div style="margin-bottom:12px; margin-top:8px;">
+                <span style="font-size:12px; color:rgba(232,228,240,0.5); display:block; margin-bottom:4px;">Option A: Cover Image URL</span>
+                <input id="bCoverImage" placeholder="https://images.unsplash.com/photo-..." oninput="handleBlogImageUrlInput(this.value)" style="width:100%;">
+              </div>
+              <div>
+                <span style="font-size:12px; color:rgba(232,228,240,0.5); display:block; margin-bottom:4px;">Option B: Upload Photo from Computer</span>
+                <input type="file" id="bCoverImageFile" accept="image/*" style="background:rgba(255,255,255,0.04); border:1px dashed rgba(255,255,255,0.15); padding:10px; border-radius:8px; width:100%; color:#f5edd8; outline:none; font-family:var(--font-sans);" onchange="handleBlogImageUpload(this)">
+                <div id="blogImageUploadStatus" style="font-size:12px; margin-top:6px; font-weight:700;"></div>
+              </div>
+            </div>
+
+            <div class="form-group full">
+              <label>Excerpt / Short Description * <small style="opacity:.5;">— shown on blog cards &amp; search results</small></label>
+              <textarea id="bExcerpt" rows="3" placeholder="A brief summary of what readers will learn in this article…"></textarea>
+            </div>
+
+            <div class="form-group full">
+              <label style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+                <span>Article Content (HTML) *</span>
+                <div style="display:flex; gap:6px;">
+                  <button type="button" onclick="insertBlogSnippet('h2')" style="padding:4px 10px; font-size:11px; border-radius:6px; background:rgba(255,255,255,0.08); color:#e3c98a; border:none; cursor:pointer;">+ Heading</button>
+                  <button type="button" onclick="insertBlogSnippet('quote')" style="padding:4px 10px; font-size:11px; border-radius:6px; background:rgba(255,255,255,0.08); color:#e3c98a; border:none; cursor:pointer;">+ Quote</button>
+                  <button type="button" onclick="insertBlogSnippet('tip')" style="padding:4px 10px; font-size:11px; border-radius:6px; background:rgba(255,255,255,0.08); color:#e3c98a; border:none; cursor:pointer;">+ Tip Box</button>
+                  <button type="button" onclick="insertBlogSnippet('img')" style="padding:4px 10px; font-size:11px; border-radius:6px; background:rgba(255,255,255,0.08); color:#e3c98a; border:none; cursor:pointer;">+ Image</button>
+                </div>
+              </label>
+              <textarea id="bContent" rows="14" style="font-family:monospace; font-size:13px; line-height:1.6;" placeholder="<h2>1. Section Title</h2><p>Write your article text here...</p>"></textarea>
+            </div>
+
+            <div class="form-group full">
+              <label>Tags <small style="opacity:.5;">— comma separated</small></label>
+              <input id="bTags" placeholder="home decor, interior design, trends 2026">
+            </div>
+
+            <div class="form-group">
+              <label>Meta Title <small style="opacity:.5;">— for Google SEO</small></label>
+              <input id="bMetaTitle" placeholder="10 Stunning Home Decor Ideas for 2026 | Velvet FINDS">
+            </div>
+            <div class="form-group">
+              <label>Meta Description <small style="opacity:.5;">— for Google Search snippets</small></label>
+              <input id="bMetaDesc" placeholder="Transform your home with these 10 curated decor ideas...">
+            </div>
+          </div>
+
+          <div style="display:flex; gap:12px; margin-top:24px;">
+            <button class="admin-btn admin-btn-gold" style="flex:2;" onclick="saveBlogAdmin()">💾 Save Blog Post</button>
+            <button class="admin-btn" style="flex:1; background:rgba(255,255,255,0.08); color:#e8e4f0;" onclick="previewBlogAdmin()">👁️ Preview</button>
+            <button class="admin-btn" style="flex:1; background:rgba(255,255,255,0.04); color:rgba(232,228,240,0.5);" onclick="clearBlogForm()">Clear</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ─── SETTINGS TAB ─── -->
+      <div class="tab-pane" id="tab-settings">
+        <h1>Site Settings</h1>
+        <p class="subtitle">Customise your website without touching any code.</p>
+
+        <div class="settings-section">
+          <h3>🌐 Website Content</h3>
+          <div class="form-grid" style="margin-bottom:0;">
+            <div class="form-group">
+              <label>Site Name</label>
+              <input class="admin-input" id="sName" style="width:100%;margin-bottom:0;">
+            </div>
+            <div class="form-group">
+              <label>Tagline</label>
+              <input class="admin-input" id="sTagline" style="width:100%;margin-bottom:0;">
+            </div>
+            <div class="form-group full">
+              <label>Hero Heading</label>
+              <input class="admin-input" id="sHeroHeading" style="width:100%;margin-bottom:0;">
+            </div>
+            <div class="form-group full">
+              <label>Hero Subheadline</label>
+              <textarea class="admin-input" id="sHeroSub" rows="3" style="width:100%;margin-bottom:0;"></textarea>
+            </div>
+            <div class="form-group">
+              <label>Pinterest URL</label>
+               <input class="admin-input" id="sPinterest" style="width:100%;margin-bottom:0;">
+            </div>
+            <div class="form-group">
+              <label>Instagram URL</label>
+              <input class="admin-input" id="sInstagram" style="width:100%;margin-bottom:0;">
+            </div>
+            <div class="form-group">
+              <label>Editor's Picks Heading</label>
+              <input class="admin-input" id="sEditorHeading" style="width:100%;margin-bottom:0;">
+            </div>
+            <div class="form-group">
+              <label>Editor's Picks Subtext</label>
+              <input class="admin-input" id="sEditorText" style="width:100%;margin-bottom:0;">
+            </div>
+            <div class="form-group full">
+              <label>Footer Description Text</label>
+              <textarea class="admin-input" id="sFooterDesc" rows="2" style="width:100%;margin-bottom:0;"></textarea>
+            </div>
+            <div class="form-group full" style="border:1px dashed rgba(255,255,255,0.15); padding:16px; border-radius:12px; background:rgba(255,255,255,0.02); margin-top:12px;">
+              <label style="font-weight:700; color:#e3c98a; display:flex; align-items:center; gap:8px;">🎨 Website Logo Mascot</label>
+              <div style="display:flex; align-items:center; gap:16px; margin-bottom:12px; margin-top:8px;">
+                <img id="sLogoPreview" src="velvet-finds-logo.jpeg" style="width:60px; height:60px; border-radius:50%; object-fit:cover; border:1px solid rgba(255,255,255,0.2);">
+                <div>
+                  <span style="font-size:12px; color:rgba(232,228,240,0.5); display:block; margin-bottom:4px;">Upload custom logo image (replaces Witch Hamster mascot):</span>
+                  <input type="file" id="sLogoFile" accept="image/*" style="font-size:12px;" onchange="handleLogoUpload(this)">
+                </div>
+              </div>
+              <input type="hidden" id="sLogo">
+            </div>
+          </div>
+          <div class="btn-row" style="margin-top:18px;">
+            <button class="admin-btn-sm abt-gold" onclick="saveSettings()">💾 Save Settings</button>
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <h3>🔀 Site Toggles</h3>
+          <div class="toggle-row">
+            <div class="info"><span>Show Newsletter Section</span><small>Display the email signup section on homepage</small></div>
+            <button class="toggle on" id="toggleNewsletter" onclick="this.classList.toggle('on')"></button>
+          </div>
+          <div class="toggle-row">
+            <div class="info"><span>Maintenance Mode</span><small>Show a coming-soon message to visitors</small></div>
+            <button class="toggle" id="toggleMaintenance" onclick="this.classList.toggle('on')"></button>
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <h3>🔐 Change Admin Password</h3>
+          <div class="form-grid">
+            <div class="form-group">
+              <label>Current Password</label>
+              <input class="admin-input" type="password" id="currentPass" placeholder="Current password" style="width:100%;margin-bottom:0;">
+            </div>
+            <div class="form-group">
+              <label>New Password</label>
+              <input class="admin-input" type="password" id="newPass" placeholder="New password" style="width:100%;margin-bottom:0;">
+            </div>
+          </div>
+          <div class="btn-row" style="margin-top:16px;">
+            <button class="admin-btn-sm abt-gold" onclick="changePassword()">🔑 Change Password</button>
+          </div>
+          <div id="pwMsg" style="font-size:13px; margin-top:10px;"></div>
+        </div>
+
+        <div class="settings-section">
+          <h3>⚠️ Data Management</h3>
+          <div style="display:flex; gap:12px; flex-wrap:wrap;">
+            <button class="admin-btn-sm abt-ghost" onclick="exportData()">📤 Export All Data (JSON)</button>
+            <button class="admin-btn-sm abt-danger" onclick="resetAnalytics()">🔄 Reset Analytics</button>
+            <button class="admin-btn-sm abt-danger" onclick="resetAllData()">⚠️ Reset All Data</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ─── CATEGORIES MANAGEMENT TAB ─── -->
+      <div class="tab-pane" id="tab-categories">
+        <h1>Shop by Category</h1>
+        <p class="subtitle">Manage which categories appear on your homepage.</p>
+        <div id="categoriesAdmin"></div>
+      </div>
+
+      <!-- ─── AMAZON IMPORT TAB ─── -->
+      <div class="tab-pane" id="tab-amazon">
+        <h1>🛒 Amazon India Product Import</h1>
+        <p class="subtitle">Search Amazon India for products, preview them, then approve or reject before anything is published.</p>
+
+        <!-- Amazon affiliate disclosure (required) -->
+        <div style="background:rgba(201,161,90,.10); border:1px solid rgba(201,161,90,.3); border-radius:12px; padding:14px 18px; margin-bottom:24px; font-size:13px; color:#e3c98a; line-height:1.6;">
+          ℹ️ <strong>Amazon Associates Disclosure:</strong> As an Amazon Associate, Velvet FINDS earns from qualifying purchases. Only products you explicitly <strong>Approve</strong> here will be published with your affiliate tracking link. Products remain Pending until you act.
+        </div>
+
+        <!-- Search Bar -->
+        <div style="background:rgba(255,255,255,.03); border:1px solid rgba(255,255,255,.08); border-radius:16px; padding:24px; margin-bottom:28px;">
+          <h3 style="margin:0 0 16px; font-size:15px; font-weight:700; color:#e3c98a;">🔍 Search Amazon India Products</h3>
+          <div style="display:grid; grid-template-columns:1fr 200px 120px; gap:12px; align-items:end; flex-wrap:wrap;">
+            <div>
+              <label style="display:block; font-size:12px; color:rgba(232,228,240,.45); margin-bottom:6px; font-weight:600; letter-spacing:.5px; text-transform:uppercase;">Keyword / Product Name</label>
+              <input id="amazonKeyword" class="search-admin" placeholder="e.g. home decor, ceramic vase, fairy lights…" style="margin:0; width:100%;" onkeydown="if(event.key==='Enter') runAmazonSearch()">
+            </div>
+            <div>
+              <label style="display:block; font-size:12px; color:rgba(232,228,240,.45); margin-bottom:6px; font-weight:600; letter-spacing:.5px; text-transform:uppercase;">Category</label>
+              <select id="amazonCategory" style="background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.1); border-radius:10px; padding:11px 16px; color:#e8e4f0; font-family:var(--font-sans); font-size:14px; width:100%; outline:none;">
+                <option value="">All Categories</option>
+                <option value="Home Decor">Home Decor</option>
+                <option value="Bedroom">Bedroom</option>
+                <option value="Living Room">Living Room</option>
+                <option value="Kitchen">Kitchen</option>
+                <option value="Beauty">Beauty</option>
+                <option value="Tech Gadgets">Tech Gadgets</option>
+                <option value="Fitness">Fitness</option>
+                <option value="Travel">Travel</option>
+                <option value="Gifts">Gifts</option>
+                <option value="Office Setup">Office Setup</option>
+                <option value="Fashion">Fashion</option>
+              </select>
+            </div>
+            <div>
+              <button class="admin-btn admin-btn-gold" id="amazonSearchBtn" onclick="runAmazonSearch()" style="width:100%; padding:12px; border-radius:10px; font-weight:700; cursor:pointer; border:none; white-space:nowrap;">
+                🔍 Search
+              </button>
+            </div>
+          </div>
+          <div style="margin-top:16px; display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
+            <span style="font-size:12px; color:rgba(232,228,240,.35);">Quick searches:</span>
+            <button class="amz-quick-btn" onclick="quickSearch('home decor India', 'Home Decor')">🏠 Home Decor</button>
+            <button class="amz-quick-btn" onclick="quickSearch('bedroom accessories', 'Bedroom')">🛏 Bedroom</button>
+            <button class="amz-quick-btn" onclick="quickSearch('kitchen organizer', 'Kitchen')">🍳 Kitchen</button>
+            <button class="amz-quick-btn" onclick="quickSearch('beauty skincare India', 'Beauty')">✨ Beauty</button>
+            <button class="amz-quick-btn" onclick="quickSearch('gift ideas India', 'Gifts')">🎁 Gifts</button>
+            <button class="amz-quick-btn" onclick="quickSearch('tech gadgets India', 'Tech Gadgets')">💡 Gadgets</button>
+          </div>
+        </div>
+
+        <!-- Search Results -->
+        <div id="amazonSearchResults" style="display:none; margin-bottom:36px;">
+          <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;">
+            <h3 style="margin:0; font-size:15px; color:#f5edd8;" id="amazonResultsHeading">Search Results</h3>
+            <span id="amazonResultsCount" style="font-size:13px; color:rgba(232,228,240,.4);"></span>
+          </div>
+          <div id="amazonResultsDemo" style="display:none; background:rgba(201,161,90,.08); border:1px solid rgba(201,161,90,.2); border-radius:10px; padding:12px 16px; margin-bottom:16px; font-size:13px; color:#e3c98a;">
+            ⚠️ <strong>Demo Mode:</strong> Amazon API credentials are not configured yet. The products below are demonstration samples. To see real Amazon India products, add your PA-API credentials to Netlify environment variables.
+          </div>
+          <div id="amazonResultsGrid" style="display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:16px;"></div>
+        </div>
+
+        <!-- Pending Approval Queue -->
+        <div style="margin-bottom:20px;">
+          <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; flex-wrap:wrap; gap:12px;">
+            <div>
+              <h3 style="margin:0 0 4px; font-size:16px; color:#f5edd8;">⏳ Pending Approval</h3>
+              <p style="margin:0; font-size:13px; color:rgba(232,228,240,.4);">Products waiting for your review. Only approved products are published.</p>
+            </div>
+            <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+              <input class="search-admin" id="pendingSearchInput" placeholder="🔍 Filter pending…" oninput="filterPendingList(this.value)" style="margin:0; width:200px; padding:9px 14px;">
+              <button class="admin-btn-sm abt-ghost" onclick="loadPendingProducts()" title="Refresh pending list">🔄 Refresh</button>
+              <button id="discoveryBtn" onclick="runDiscovery()" style="background:linear-gradient(135deg,#3d2144,#2b1730); color:#e3c98a; border:1px solid rgba(201,161,90,.3); border-radius:10px; padding:10px 18px; font-size:13px; font-weight:700; cursor:pointer; white-space:nowrap; display:flex; align-items:center; gap:6px;">
+                🤖 Run Auto-Discovery
+              </button>
+            </div>
+          </div>
+
+          <!-- Filter tabs -->
+          <div style="display:flex; gap:8px; margin-bottom:20px; flex-wrap:wrap;">
+            <button class="amz-filter-tab active" id="filterTab-pending" onclick="switchPendingFilter('pending')">⏳ Pending</button>
+            <button class="amz-filter-tab" id="filterTab-rejected" onclick="switchPendingFilter('rejected')">❌ Rejected</button>
+            <button class="amz-filter-tab" id="filterTab-all" onclick="switchPendingFilter('all')">📦 All Imported</button>
+          </div>
+
+          <div id="pendingProductsList"></div>
+        </div>
+
+      </div><!-- /tab-amazon -->
+
+    </main>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<!-- Amazon Product Preview Modal -->
+<div id="amazonPreviewModal" style="display:none; position:fixed; inset:0; z-index:9999; background:rgba(0,0,0,.85); backdrop-filter:blur(8px); overflow-y:auto; padding:40px 20px;">
+  <div style="max-width:640px; margin:0 auto; background:#1e1b26; border:1px solid rgba(255,255,255,.1); border-radius:20px; overflow:hidden;">
+    <div id="amazonPreviewContent"></div>
+    <div style="padding:20px 24px; border-top:1px solid rgba(255,255,255,.08); display:flex; gap:12px;">
+      <button id="previewApproveBtn" style="flex:2; padding:14px; background:linear-gradient(135deg,#2e7d32,#43a047); color:#fff; border:none; border-radius:10px; font-weight:700; cursor:pointer; font-size:14px; display:flex; align-items:center; justify-content:center; gap:8px;">
+        ✅ Approve &amp; Publish
+      </button>
+      <button id="previewRejectBtn" style="flex:1; padding:14px; background:rgba(229,57,53,.15); color:#ef9a9a; border:1px solid rgba(229,57,53,.3); border-radius:10px; font-weight:700; cursor:pointer; font-size:14px;">
+        ❌ Reject
+      </button>
+      <button onclick="closePreview()" style="flex:1; padding:14px; background:rgba(255,255,255,.06); color:rgba(232,228,240,.6); border:none; border-radius:10px; font-weight:700; cursor:pointer; font-size:14px;">
+        ✕ Close
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+  VF.init();
+
+  /* ─────── AUTH ───────────────────────────────── */
+  const settings = VF.getSettings();
+  function doLogin() {
+    const pw = document.getElementById('passwordInput').value;
+    const correct = VF.getSettings().adminPassword || 'velvetadmin';
+    if (pw === correct) {
+      document.getElementById('loginPage').classList.remove('active');
+      document.getElementById('adminPage').classList.add('active');
+      initDashboard();
+    } else {
+      document.getElementById('loginError').textContent = '❌ Incorrect password. Please try again.';
+      document.getElementById('passwordInput').value = '';
+    }
+  }
+  function doLogout() {
+    document.getElementById('adminPage').classList.remove('active');
+    document.getElementById('loginPage').classList.add('active');
+    document.getElementById('passwordInput').value = '';
+  }
+  document.getElementById('passwordInput').addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
+
+  /* ─────── TABS ───────────────────────────────── */
+  function showTab(tab) {
+    document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    document.getElementById('tab-' + tab).classList.add('active');
+    const ni = document.getElementById('nav-' + tab);
+    if (ni) ni.classList.add('active');
+    if (tab === 'products') renderProductList('');
+    if (tab === 'products-analytics') renderTopProducts();
+    if (tab === 'visitors') renderVisitorStats();
+    if (tab === 'blogs') renderBlogListAdmin('');
+    if (tab === 'settings') loadSettings();
+    if (tab === 'add') { clearForm(); document.getElementById('editorTitle').textContent = 'Add New Product'; }
+    if (tab === 'add-blog') { if (!document.getElementById('editBlogId').value) clearBlogForm(); }
+    if (tab === 'amazon') { loadPendingProducts(); }
+  }
+
+  /* ─────── INIT DASHBOARD ───────────────────────────── */
+  async function initDashboard() {
+    const a = VF.getAnalytics();
+    const products = await VF.getProducts();
+    const totalClicks = Object.values(a.productClicks || {}).reduce((s,v) => s+v, 0);
+
+    // Stats Grid
+    document.getElementById('statsGrid').innerHTML = [
+      ['Total Visits', (a.totalVisits||0).toLocaleString(), 'All time visits', '📈'],
+      ['Page Views', (a.pageViews||0).toLocaleString(), 'All time page views', '👁️'],
+      ['Product Clicks', totalClicks.toLocaleString(), 'Affiliate link clicks', '🛒'],
+      ['Products Live', products.length, 'Curated finds on site', '🛍️'],
+    ].map(([label, value, sub, icon]) => `
+      <div class="stat-card">
+        <div class="label">${icon} ${label}</div>
+        <div class="value">${value}</div>
+        <div class="sub">${sub}</div>
+      </div>`).join('');
+
+    // Visit Chart
+    const days = a.dailyVisits || [];
+    const max = Math.max(...days, 1);
+    document.getElementById('visitChart').innerHTML = days.map((v, i) => `
+      <div class="bar" style="height:${Math.max(10, (v/max)*100)}%;" title="${v} visits">
+        <span class="bar-val">${v}</span>
+      </div>`).join('');
+
+    // Device Bars
+    const d = a.devices || { mobile:68, desktop:24, tablet:8 };
+    document.getElementById('deviceBars').innerHTML = [
+      ['📱 Mobile', d.mobile, '#c9a15a'],
+      ['💻 Desktop', d.desktop, '#e9c9c2'],
+      ['📟 Tablet', d.tablet, '#8a7c7e'],
+    ].map(([label, pct, color]) => `
+      <div class="dev-bar-row">
+        <span style="width:90px;">${label}</span>
+        <div class="dev-bar-track"><div class="dev-bar-fill" style="width:${pct}%; background:${color};"></div></div>
+        <span style="font-weight:700; color:#e3c98a; width:35px; text-align:right;">${pct}%</span>
+      </div>`).join('');
+
+    // Countries
+    const countries = a.topCountries || [];
+    document.getElementById('countryList').innerHTML = countries.map(([name, flag, pct]) => `
+      <div class="country-row">
+        <span style="font-size:20px;">${flag}</span>
+        <span>${name}</span>
+        <div style="flex:1; height:6px; background:rgba(255,255,255,.06); border-radius:999px; margin:0 10px; overflow:hidden;">
+          <div style="height:100%; width:${pct}%; background:linear-gradient(90deg,#e3c98a,#c9a15a); border-radius:999px;"></div>
+        </div>
+        <span class="country-pct">${pct}%</span>
+      </div>`).join('');
+
+    renderTopProducts();
+    initGradientPicker();
+  }
+
+  /* ─────── TOP PRODUCTS ───────────────────────────── */
+  async function renderTopProducts() {
+    const a = VF.getAnalytics();
+    const clicks = a.productClicks || {};
+    const products = await VF.getProducts();
+    const sorted = products
+      .map(p => ({ ...p, clicks: clicks[p.id] || 0 }))
+      .sort((a, b) => b.clicks - a.clicks);
+
+    document.getElementById('topProductsList').innerHTML = sorted.map((p, i) => `
+      <div class="top-prod-item">
+        <div class="rank">${i+1}</div>
+        <div class="top-prod-thumb" style="${p.image ? `background-image:url('${p.image}'); background-size:cover; background-position:center;` : `background:${p.gradient};`}"></div>
+        <div class="top-prod-info">
+          <div class="pn">${p.name}</div>
+          <div class="pm">${p.category} · ₹${p.price.toLocaleString()} · ${p.store}</div>
+        </div>
+        <div class="click-count">${p.clicks}</div>
+        <span style="font-size:11px; color:rgba(232,228,240,.3); margin-left:4px;">clicks</span>
+      </div>`).join('') || '<div style="color:rgba(232,228,240,.3); text-align:center; padding:40px;">No click data yet. Clicks on products will appear here.</div>';
+  }
+
+  /* ─────── VISITOR STATS ───────────────────────────── */
+  function renderVisitorStats() {
+    const a = VF.getAnalytics();
+    document.getElementById('visitorStats').innerHTML = [
+      ['Total Visits', (a.totalVisits||0).toLocaleString(), '📈'],
+      ['Page Views', (a.pageViews||0).toLocaleString(), '👁️'],
+      ['Bounce Rate', (a.bounceRate||0)+'%', '↩️'],
+      ['Avg. Session', a.avgSession||'—', '⏱️'],
+    ].map(([label, value, icon]) => `
+      <div class="stat-card">
+        <div class="label">${icon} ${label}</div>
+        <div class="value">${value}</div>
+      </div>`).join('');
+  }
+
+  /* ─────── PRODUCT LIST ───────────────────────────── */
+  async function renderProductList(query='') {
+    const el = document.getElementById('productListAdmin');
+    el.innerHTML = '<div style="color:rgba(232,228,240,.4);text-align:center;padding:30px;"><div class="spinner" style="margin:0 auto 10px;"></div>Loading products…</div>';
+    let products = await VF.getProducts();
+    if (query) products = products.filter(p => p.name.toLowerCase().includes(query.toLowerCase()) || p.category.toLowerCase().includes(query.toLowerCase()));
+    el.innerHTML = products.length
+      ? products.map(p => `
+        <div class="product-admin-card">
+          <div class="pac-thumb" style="${p.image ? `background-image:url('${p.image}'); background-size:cover; background-position:center;` : `background:${p.gradient};`}"></div>
+          <div class="pac-info">
+            <div class="pname">${p.name}</div>
+            <div class="pmeta">${p.category} · ₹${p.price.toLocaleString()} · ${p.store} · ${p.rating}★</div>
+          </div>
+          <div class="pac-actions">
+            <a href="product.html?id=${p.id}" target="_blank"><button class="admin-btn-sm abt-ghost">👁 View</button></a>
+            <button class="admin-btn-sm abt-gold" onclick="editProduct('${p.id}')">✏️ Edit</button>
+            <button class="admin-btn-sm abt-danger" onclick="deleteProduct('${p.id}')">🗑️</button>
+          </div>
+        </div>`).join('')
+      : '<div style="color:rgba(232,228,240,.3); text-align:center; padding:40px;">No products found.</div>';
+  }
+
+  /* ─────── EDIT PRODUCT ───────────────────────────── */
+  async function editProduct(id) {
+    const p = await VF.getProduct(id);
+    if (!p) return;
+    document.getElementById('editProductId').value = p.id;
+    document.getElementById('pName').value = p.name || '';
+    document.getElementById('pCategory').value = p.category || 'Fashion';
+    document.getElementById('pPrice').value = p.price || '';
+    document.getElementById('pOriginalPrice').value = p.originalPrice || '';
+    document.getElementById('pRating').value = p.rating || 4.5;
+    document.getElementById('pReviews').value = p.reviews || 0;
+    document.getElementById('pBadge').value = p.badge || '';
+    document.getElementById('pStore').value = p.store || 'Amazon';
+    document.getElementById('pAffiliateLink').value = p.affiliateLink || '';
+    document.getElementById('pDescription').value = p.description || '';
+    document.getElementById('pFeatures').value = (p.features || []).join('\n');
+    document.getElementById('pHeight').value = p.height || 300;
+    document.getElementById('pSaved').value = p.savedCount || '';
+    document.getElementById('pGradient').value = p.gradient || gradients[0];
+    document.getElementById('pImage').value = p.image || '';
+    handleImageUrlInput(p.image || '');
+    updateGradientPreview();
+    document.getElementById('editorTitle').textContent = `✏️ Editing: ${p.name}`;
+    showTab('add');
+    document.getElementById('tab-add').scrollIntoView({ behavior:'smooth' });
+  }
+
+  /* ─────── DELETE PRODUCT ───────────────────────────── */
+  async function deleteProduct(id) {
+    const p = await VF.getProduct(id);
+    if (!p) return;
+    if (!confirm(`Delete "${p.name}"? This cannot be undone.`)) return;
+    toast('⏳ Deleting…');
+    const ok = await VF.deleteProduct(id);
+    if (ok) {
+      await renderProductList(document.getElementById('productSearchAdmin').value || '');
+      toast('🗑️ Product deleted from all devices!');
+    } else {
+      toast('❌ Delete failed — check connection', true);
+    }
+  }
+
+  /* ─────── SAVE PRODUCT ───────────────────────────── */
+  async function saveProduct() {
+    const name = document.getElementById('pName').value.trim();
+    const price = parseFloat(document.getElementById('pPrice').value);
+    const link  = document.getElementById('pAffiliateLink').value.trim();
+    if (!name) { toast('❌ Product name is required', true); return; }
+    if (!price) { toast('❌ Price is required', true); return; }
+    if (!link)  { toast('❌ Affiliate link is required', true); return; }
+
+    const data = {
+      name,
+      category: document.getElementById('pCategory').value,
+      price,
+      originalPrice: parseFloat(document.getElementById('pOriginalPrice').value) || null,
+      rating: parseFloat(document.getElementById('pRating').value) || 4.5,
+      reviews: parseInt(document.getElementById('pReviews').value) || 0,
+      badge: document.getElementById('pBadge').value.trim() || null,
+      store: document.getElementById('pStore').value,
+      affiliateLink: link,
+      description: document.getElementById('pDescription').value.trim(),
+      features: document.getElementById('pFeatures').value.trim().split('\n').filter(Boolean),
+      height: parseInt(document.getElementById('pHeight').value) || 300,
+      savedCount: document.getElementById('pSaved').value.trim() || '0',
+      gradient: document.getElementById('pGradient').value,
+      image: document.getElementById('pImage').value.trim() || null,
+      status: 'published'
+    };
+
+    const existingId = document.getElementById('editProductId').value;
+    toast('⏳ Saving to database…');
+    let ok;
+    if (existingId) {
+      ok = await VF.updateProduct(existingId, data);
+      ok ? toast('✅ Product updated on ALL devices!') : toast('❌ Update failed — check connection', true);
+    } else {
+      ok = await VF.addProduct(data);
+      ok ? toast('✅ New product live on ALL devices!') : toast('❌ Add failed — check connection', true);
+    }
+    if (ok) clearForm();
+  }
+
+  function clearForm() {
+    ['pName','pPrice','pOriginalPrice','pRating','pReviews','pBadge','pAffiliateLink','pDescription','pFeatures','pSaved','pImage','pImageFile','editProductId'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
+    const previewContainer = document.getElementById('imagePreviewContainer');
+    if (previewContainer) previewContainer.style.display = 'none';
+    const status = document.getElementById('imageUploadStatus');
+    if (status) status.textContent = '';
+    document.getElementById('pHeight').value = 300;
+    document.getElementById('pGradient').value = gradients[0];
+    updateGradientPreview();
+    document.getElementById('editorTitle').textContent = 'Add New Product';
+  }
+
+  /* ─────── GRADIENT PICKER ───────────────────────────── */
+  const gradients = [
+    "linear-gradient(160deg,#e9c9c2,#3d2144)","linear-gradient(160deg,#c9a15a,#e3c98a)",
+    "linear-gradient(160deg,#e3c98a,#e9c9c2)","linear-gradient(160deg,#3d2144,#2b1730)",
+    "linear-gradient(160deg,#c9a15a,#2b1730)","linear-gradient(160deg,#3d2144,#8a7c7e)",
+    "linear-gradient(160deg,#e9c9c2,#c9a15a)","linear-gradient(160deg,#2b1730,#c9a15a)",
+    "linear-gradient(160deg,#2b1730,#3d2144)","linear-gradient(160deg,#e3c98a,#3d2144)",
+    "linear-gradient(160deg,#3d2144,#c9a15a)","linear-gradient(160deg,#f3e7cc,#e9c9c2)",
+  ];
+
+  function initGradientPicker() {
+    const picker = document.getElementById('gradPicker');
+    picker.innerHTML = gradients.map((g, i) => `
+      <div class="gp-opt" style="background:${g};" onclick="selectGradient(${i})" title="Gradient ${i+1}"></div>
+    `).join('');
+    updateGradientPreview();
+  }
+
+  function selectGradient(i) {
+    document.getElementById('pGradient').value = gradients[i];
+    document.querySelectorAll('.gp-opt').forEach((el, idx) => el.classList.toggle('selected', idx===i));
+    updateGradientPreview();
+  }
+
+  function updateGradientPreview() {
+    const v = document.getElementById('pGradient').value;
+    document.getElementById('gradientPreview').style.background = v;
+  }
+
+  function handleImageUpload(input) {
+    const file = input.files[0];
+    const status = document.getElementById('imageUploadStatus');
+    if (!file) return;
+
+    status.textContent = '⌛ Processing and compressing image...';
+    status.style.color = '#c9a15a';
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      const img = new Image();
+      img.onload = function() {
+        const maxDim = 800;
+        let w = img.width;
+        let h = img.height;
+        if (w > maxDim || h > maxDim) {
+          if (w > h) { h = Math.round((h * maxDim) / w); w = maxDim; }
+          else { w = Math.round((w * maxDim) / h); h = maxDim; }
+        }
+
+        const canvas = document.createElement('canvas');
+        canvas.width = w;
+        canvas.height = h;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, w, h);
+
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.75);
+        document.getElementById('pImage').value = dataUrl;
+        
+        // Show preview
+        const preview = document.getElementById('imageUploadPreview');
+        const container = document.getElementById('imagePreviewContainer');
+        preview.src = dataUrl;
+        container.style.display = 'flex';
+
+        status.textContent = '✅ Image uploaded and optimized!';
+        status.style.color = '#4cdf8c';
+      };
+      img.onerror = function() {
+        status.textContent = '❌ Failed to parse image file';
+        status.style.color = '#ff8a80';
+      };
+      img.src = e.target.result;
+    };
+    reader.onerror = function() {
+      status.textContent = '❌ Failed to read image file';
+      status.style.color = '#ff8a80';
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function handleImageUrlInput(val) {
+    const preview = document.getElementById('imageUploadPreview');
+    const container = document.getElementById('imagePreviewContainer');
+    if (val.trim()) {
+      preview.src = val.trim();
+      container.style.display = 'flex';
+    } else {
+      container.style.display = 'none';
+    }
+  }
+
+  function deleteProductImage() {
+    document.getElementById('pImage').value = '';
+    document.getElementById('pImageFile').value = '';
+    document.getElementById('imagePreviewContainer').style.display = 'none';
+    const status = document.getElementById('imageUploadStatus');
+    if (status) {
+      status.textContent = '🗑️ Image deleted';
+      status.style.color = '#ff8a80';
+    }
+  }
+
+  function handleLogoUpload(input) {
+    const file = input.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      const img = new Image();
+      img.onload = function() {
+        const maxDim = 200;
+        let w = img.width;
+        let h = img.height;
+        if (w > maxDim || h > maxDim) {
+          if (w > h) { h = Math.round((h * maxDim) / w); w = maxDim; }
+          else { w = Math.round((w * maxDim) / h); h = maxDim; }
+        }
+
+        const canvas = document.createElement('canvas');
+        canvas.width = w;
+        canvas.height = h;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, w, h);
+
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+        document.getElementById('sLogo').value = dataUrl;
+        document.getElementById('sLogoPreview').src = dataUrl;
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  /* ─────── SETTINGS ───────────────────────────── */
+  function loadSettings() {
+    const s = VF.getSettings();
+    document.getElementById('sName').value       = s.siteName || '';
+    document.getElementById('sTagline').value    = s.tagline || '';
+    document.getElementById('sHeroHeading').value= s.heroHeading || '';
+    document.getElementById('sHeroSub').value    = s.heroSub || '';
+    document.getElementById('sPinterest').value  = s.pinterestUrl || '';
+    document.getElementById('sInstagram').value  = s.instagramUrl || '';
+    document.getElementById('sEditorHeading').value = s.editorHeading || '';
+    document.getElementById('sEditorText').value    = s.editorText || '';
+    document.getElementById('sFooterDesc').value    = s.footerDesc || '';
+    document.getElementById('sLogo').value          = s.logo || '';
+    document.getElementById('sLogoPreview').src     = s.logo || 'velvet-finds-logo.jpeg';
+    document.getElementById('toggleNewsletter').classList.toggle('on', !!s.showNewsletter);
+    document.getElementById('toggleMaintenance').classList.toggle('on', !!s.maintenanceMode);
+  }
+
+  function saveSettings() {
+    const s = VF.getSettings();
+    s.siteName     = document.getElementById('sName').value.trim();
+    s.tagline      = document.getElementById('sTagline').value.trim();
+    s.heroHeading  = document.getElementById('sHeroHeading').value.trim();
+    s.heroSub      = document.getElementById('sHeroSub').value.trim();
+    s.pinterestUrl = document.getElementById('sPinterest').value.trim();
+    s.instagramUrl = document.getElementById('sInstagram').value.trim();
+    s.editorHeading = document.getElementById('sEditorHeading').value.trim();
+    s.editorText    = document.getElementById('sEditorText').value.trim();
+    s.footerDesc    = document.getElementById('sFooterDesc').value.trim();
+    s.logo          = document.getElementById('sLogo').value.trim();
+    s.showNewsletter   = document.getElementById('toggleNewsletter').classList.contains('on');
+    s.maintenanceMode  = document.getElementById('toggleMaintenance').classList.contains('on');
+    VF.saveSettings(s);
+    toast('✅ Settings saved!');
+  }
+
+  function changePassword() {
+    const cur = document.getElementById('currentPass').value;
+    const nw  = document.getElementById('newPass').value;
+    const s   = VF.getSettings();
+    const msg = document.getElementById('pwMsg');
+    if (cur !== s.adminPassword) { msg.textContent = '❌ Current password is incorrect.'; msg.style.color='#ff8a80'; return; }
+    if (nw.length < 6) { msg.textContent = '❌ New password must be at least 6 characters.'; msg.style.color='#ff8a80'; return; }
+    s.adminPassword = nw;
+    VF.saveSettings(s);
+    msg.textContent = '✅ Password changed successfully!'; msg.style.color='#4cdf8c';
+    document.getElementById('currentPass').value = '';
+    document.getElementById('newPass').value = '';
+  }
+
+  /* ─────── DATA MANAGEMENT ───────────────────────────── */
+  function exportData() {
+    const data = {
+      products: VF.getProducts(),
+      analytics: VF.getAnalytics(),
+      settings: VF.getSettings(),
+      exportedAt: new Date().toISOString()
+    };
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type:'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = Object.assign(document.createElement('a'), { href:url, download:'velvet-finds-export.json' });
+    a.click(); URL.revokeObjectURL(url);
+    toast('📤 Data exported!');
+  }
+
+  function resetAnalytics() {
+    if (!confirm('Reset all analytics data? This cannot be undone.')) return;
+    localStorage.removeItem('vf_analytics');
+    VF.init();
+    toast('🔄 Analytics reset');
+    initDashboard();
+  }
+
+  function resetAllData() {
+    if (!confirm('⚠️ WARNING: This will delete ALL products and data. Are you absolutely sure?')) return;
+    if (!confirm('Last chance — this CANNOT be undone. Delete everything?')) return;
+    localStorage.removeItem('vf_products');
+    localStorage.removeItem('vf_analytics');
+    localStorage.removeItem('vf_settings');
+    VF.init();
+    toast('⚠️ All data reset to defaults');
+    initDashboard();
+  }
+
+  /* ─────── BLOG MANAGEMENT ADMIN LOGIC ──────────── */
+  function autoSlugBlog(val) {
+    const editId = document.getElementById('editBlogId').value;
+    if (!editId) {
+      document.getElementById('bSlug').value = VF.generateSlug(val);
+    }
+  }
+
+  async function renderBlogListAdmin(query='') {
+    const el = document.getElementById('blogListAdmin');
+    if (!el) return;
+    el.innerHTML = '<div style="color:rgba(232,228,240,.4);text-align:center;padding:30px;"><div class="spinner" style="margin:0 auto 10px;"></div>Loading blogs…</div>';
+    let blogs = await VF.getBlogs(false);
+    if (query) {
+      blogs = blogs.filter(b => b.title.toLowerCase().includes(query.toLowerCase()) || b.category.toLowerCase().includes(query.toLowerCase()));
+    }
+    if (!blogs.length) {
+      el.innerHTML = '<div style="color:rgba(232,228,240,.3); text-align:center; padding:40px;">No blog posts found.</div>';
+      return;
+    }
+    el.innerHTML = blogs.map(b => `
+      <div class="product-admin-card" style="align-items:center;">
+        <div class="pac-thumb" style="${b.coverImage ? `background-image:url('${b.coverImage}'); background-size:cover; background-position:center;` : `background:var(--gold-grad);`} width:90px; height:60px; border-radius:8px;"></div>
+        <div class="pac-info" style="flex:1;">
+          <div class="pname" style="font-weight:700; font-size:15px; margin-bottom:4px;">${b.title}</div>
+          <div class="pmeta" style="font-size:12.5px; color:rgba(232,228,240,0.5);">
+            <span class="badge ${b.status==='published' ? 'badge-gold' : 'badge-plum'}" style="font-size:10px; margin-right:8px;">${b.status}</span>
+            ${b.category} · ⏱ ${b.readTime||5}m · 📅 ${b.publishDate || 'Not set'}
+          </div>
+        </div>
+        <div class="pac-actions" style="display:flex; gap:8px;">
+          <a href="article.html?slug=${b.slug}" target="_blank"><button class="admin-btn-sm abt-ghost">👁 View</button></a>
+          <button class="admin-btn-sm abt-gold" onclick="editBlogAdmin('${b.id}')">✏️ Edit</button>
+          <button class="admin-btn-sm abt-danger" onclick="deleteBlogAdmin('${b.id}')">🗑️</button>
+        </div>
+      </div>`).join('');
+  }
+
+  async function editBlogAdmin(id) {
+    const blogs = await VF.getBlogs(false);
+    const b = blogs.find(item => item.id === id);
+    if (!b) return;
+    document.getElementById('editBlogId').value = b.id;
+    document.getElementById('bTitle').value = b.title || '';
+    document.getElementById('bSlug').value = b.slug || '';
+    document.getElementById('bCategory').value = b.category || 'Home Decor';
+    document.getElementById('bAuthor').value = b.author || 'Velvet FINDS Team';
+    document.getElementById('bDate').value = b.publishDate || '';
+    document.getElementById('bReadTime').value = b.readTime || 5;
+    document.getElementById('bStatus').value = b.status || 'published';
+    document.getElementById('bCoverImage').value = b.coverImage || '';
+    document.getElementById('bExcerpt').value = b.excerpt || '';
+    document.getElementById('bContent').value = b.content || '';
+    document.getElementById('bTags').value = (b.tags || []).join(', ');
+    document.getElementById('bMetaTitle').value = b.metaTitle || '';
+    document.getElementById('bMetaDesc').value = b.metaDescription || '';
+    handleBlogImageUrlInput(b.coverImage || '');
+    document.getElementById('blogEditorTitle').textContent = `✏️ Editing: ${b.title}`;
+    showTab('add-blog');
+    document.getElementById('tab-add-blog').scrollIntoView({ behavior:'smooth' });
+  }
+
+  async function deleteBlogAdmin(id) {
+    const blogs = await VF.getBlogs(false);
+    const b = blogs.find(item => item.id === id);
+    if (!b) return;
+    if (!confirm(`Delete blog post "${b.title}"? This cannot be undone.`)) return;
+    toast('⏳ Deleting blog…');
+    const ok = await VF.deleteBlog(id);
+    if (ok) {
+      await renderBlogListAdmin(document.getElementById('blogSearchAdmin').value || '');
+      toast('🗑️ Blog post deleted!');
+    } else {
+      toast('❌ Delete failed — check connection', true);
+    }
+  }
+
+  async function saveBlogAdmin() {
+    const title = document.getElementById('bTitle').value.trim();
+    const excerpt = document.getElementById('bExcerpt').value.trim();
+    const content = document.getElementById('bContent').value.trim();
+    if (!title) { toast('❌ Blog Title is required', true); return; }
+    if (!excerpt) { toast('❌ Excerpt is required', true); return; }
+    if (!content) { toast('❌ Article content is required', true); return; }
+
+    const tagsRaw = document.getElementById('bTags').value;
+    const tags = tagsRaw.split(',').map(t => t.trim()).filter(Boolean);
+
+    const recCatBoxes = document.querySelectorAll('#blogRecProductCats input[type="checkbox"]:checked');
+    const recCats = Array.from(recCatBoxes).map(cb => cb.value);
+
+    const data = {
+      title,
+      slug: document.getElementById('bSlug').value.trim() || VF.generateSlug(title),
+      category: document.getElementById('bCategory').value,
+      author: document.getElementById('bAuthor').value.trim() || 'Velvet FINDS Team',
+      publishDate: document.getElementById('bDate').value || new Date().toISOString().split('T')[0],
+      readTime: parseInt(document.getElementById('bReadTime').value) || 5,
+      status: document.getElementById('bStatus').value,
+      coverImage: document.getElementById('bCoverImage').value.trim() || '',
+      excerpt,
+      content,
+      tags,
+      metaTitle: document.getElementById('bMetaTitle').value.trim() || title,
+      metaDescription: document.getElementById('bMetaDesc').value.trim() || excerpt,
+      recommendedProductCategories: recCats
+    };
+
+    const existingId = document.getElementById('editBlogId').value;
+    toast('⏳ Saving blog post to database…');
+    let ok;
+    if (existingId) {
+      ok = await VF.updateBlog(existingId, data);
+      ok ? toast('✅ Blog post updated live!') : toast('❌ Update failed', true);
+    } else {
+      ok = await VF.addBlog(data);
+      ok ? toast('✅ New blog post published!') : toast('❌ Save failed', true);
+    }
+    if (ok) clearBlogForm();
+  }
+
+  function clearBlogForm() {
+    ['bTitle','bSlug','bCoverImage','bExcerpt','bContent','bTags','bMetaTitle','bMetaDesc','editBlogId'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.value = '';
+    });
+    document.getElementById('bAuthor').value = 'Velvet FINDS Team';
+    document.getElementById('bReadTime').value = 5;
+    document.getElementById('bStatus').value = 'published';
+    document.getElementById('bDate').value = new Date().toISOString().split('T')[0];
+    const previewContainer = document.getElementById('blogImagePreviewContainer');
+    if (previewContainer) previewContainer.style.display = 'none';
+    const status = document.getElementById('blogImageUploadStatus');
+    if (status) status.textContent = '';
+    document.getElementById('blogEditorTitle').textContent = 'Add New Blog Post';
+  }
+
+  function previewBlogAdmin() {
+    const slug = document.getElementById('bSlug').value.trim() || VF.generateSlug(document.getElementById('bTitle').value);
+    if (!slug) { toast('❌ Please enter a blog title first', true); return; }
+    window.open(`article.html?slug=${slug}`, '_blank');
+  }
+
+  function insertBlogSnippet(type) {
+    const textarea = document.getElementById('bContent');
+    const start = textarea.selectionStart;
+    let snippet = '';
+    if (type === 'h2') snippet = '\n<h2>Section Heading</h2>\n<p>Write section text here...</p>\n';
+    if (type === 'quote') snippet = '\n<blockquote class="pull-quote">"Quote text goes here..."</blockquote>\n';
+    if (type === 'tip') snippet = '\n<div class="article-tip"><strong>💡 Pro Tip:</strong> Helpful tip or key takeaway goes here.</div>\n';
+    if (type === 'img') snippet = '\n<img src="https://images.unsplash.com/photo-..." alt="Image description">\n';
+
+    textarea.value = textarea.value.substring(0, start) + snippet + textarea.value.substring(textarea.selectionEnd);
+    textarea.focus();
+  }
+
+  function handleBlogImageUrlInput(url) {
+    const container = document.getElementById('blogImagePreviewContainer');
+    const preview = document.getElementById('blogImagePreview');
+    if (url.trim()) {
+      preview.src = url.trim();
+      container.style.display = 'flex';
+    } else {
+      container.style.display = 'none';
+    }
+  }
+
+  function deleteBlogCoverImage() {
+    document.getElementById('bCoverImage').value = '';
+    document.getElementById('blogImagePreviewContainer').style.display = 'none';
+    const file = document.getElementById('bCoverImageFile');
+    if (file) file.value = '';
+  }
+
+  function handleBlogImageUpload(input) {
+    const file = input.files[0];
+    const status = document.getElementById('blogImageUploadStatus');
+    if (!file) return;
+    if (file.size > 2 * 1024 * 1024) {
+      status.textContent = '❌ Image too large (max 2MB)';
+      status.style.color = '#ff8a80';
+      return;
+    }
+    status.textContent = '⏳ Processing image…';
+    status.style.color = '#e3c98a';
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      const base64 = e.target.result;
+      document.getElementById('bCoverImage').value = base64;
+      handleBlogImageUrlInput(base64);
+      status.textContent = '✅ Image ready!';
+      status.style.color = '#27a55b';
+    };
+    reader.readAsDataURL(file);
+  }
+
+  /* ─────── TOAST ───────────────────────────── */
+  function toast(msg, isError=false) {
+    const t = document.getElementById('toast');
+    t.innerHTML = `<span class="toast-icon">${isError ? '❌' : '✅'}</span>${msg}`;
+    t.style.borderColor = isError ? 'rgba(255,80,80,.3)' : 'rgba(201,161,90,.25)';
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 3200);
+  }
+
+  /* ═══════════════════════════════════════════════════════════
+     ─── AMAZON INDIA AFFILIATE PRODUCT IMPORT SYSTEM ──────────
+     All Amazon API calls go through Netlify Functions (server-side).
+     Credentials (API keys, secret, partner tag) are NEVER in frontend code.
+     Products imported here are saved as 'pending' and NEVER auto-published.
+     You must explicitly click YES/Approve to publish any product.
+     ═══════════════════════════════════════════════════════════ */
+
+  /* ── State variables ──────────────────────────────────────── */
+  let _amazonSearchResults   = [];   // results from current search
+  let _pendingAllProducts    = [];   // all pending/rejected/imported products (for filtering)
+  let _pendingFilterMode     = 'pending'; // 'pending' | 'rejected' | 'all'
+  let _previewCurrentProduct = null; // product being previewed
+  let _existingAsins         = new Set(); // for duplicate detection
+
+  /* ── Helper: Format price ─────────────────────────────────── */
+  function fmtPrice(p) {
+    if (p == null || p === 0) return 'Price N/A';
+    return '₹' + Number(p).toLocaleString('en-IN');
+  }
+
+  /* ── Helper: Determine if we're running through Netlify ──── */
+  function isNetlify() {
+    return window.location.hostname !== 'localhost' &&
+           !window.location.protocol.startsWith('file');
+  }
+
+  /* ── Helper: Build function URL ─────────────────────────── */
+  function fnUrl(name) {
+    if (isNetlify()) return `/.netlify/functions/${name}`;
+    // In local file mode, simulate with the local functions stub
+    return `/.netlify/functions/${name}`;
+  }
+
+  /* ══ SEARCH AMAZON ════════════════════════════════════════════ */
+  async function runAmazonSearch() {
+    const keyword  = (document.getElementById('amazonKeyword').value || '').trim();
+    const category = document.getElementById('amazonCategory').value || '';
+
+    if (!keyword) {
+      toast('⚠️ Please enter a keyword to search.', true);
+      document.getElementById('amazonKeyword').focus();
+      return;
+    }
+
+    // UI: loading state
+    const btn = document.getElementById('amazonSearchBtn');
+    btn.disabled = true;
+    btn.textContent = '⏳ Searching…';
+
+    const resultsSection = document.getElementById('amazonSearchResults');
+    const resultsGrid    = document.getElementById('amazonResultsGrid');
+    const demoBanner     = document.getElementById('amazonResultsDemo');
+    resultsSection.style.display = 'block';
+    resultsGrid.innerHTML = [1,2,3,4].map(() => `<div class="amz-shimmer"></div>`).join('');
+    document.getElementById('amazonResultsHeading').textContent = `Searching for "${keyword}"…`;
+    document.getElementById('amazonResultsCount').textContent = '';
+    demoBanner.style.display = 'none';
+
+    try {
+      // Load existing ASINs for duplicate detection
+      const allExisting = await VF.getAllProducts();
+      _existingAsins = new Set(allExisting.filter(p => p.asin).map(p => p.asin));
+
+      const params = new URLSearchParams({ keyword });
+      if (category) params.set('category', category);
+
+      const res = await fetch(`${fnUrl('amazonSearch')}?${params}`);
+      const data = await res.json();
+
+      if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+
+      _amazonSearchResults = data.products || [];
+
+      // Show demo banner if results are mock data
+      if (data.demo) demoBanner.style.display = 'block';
+
+      document.getElementById('amazonResultsHeading').textContent =
+        `Search Results for "${keyword}"${category ? ' · ' + category : ''}`;
+      document.getElementById('amazonResultsCount').textContent =
+        `${_amazonSearchResults.length} product${_amazonSearchResults.length !== 1 ? 's' : ''} found`;
+
+      renderSearchResults(_amazonSearchResults);
+
+    } catch (err) {
+      console.error('[AMZ] Search error:', err);
+      resultsGrid.innerHTML = `
+        <div style="grid-column:1/-1; text-align:center; padding:40px; color:rgba(232,228,240,.4);">
+          <div style="font-size:36px; margin-bottom:12px;">⚠️</div>
+          <p>Search failed: ${err.message}</p>
+          <p style="font-size:12px; margin-top:8px;">Make sure Netlify Functions are running (netlify dev).</p>
+        </div>`;
+      toast('❌ Amazon search failed: ' + err.message, true);
+    } finally {
+      btn.disabled = false;
+      btn.textContent = '🔍 Search';
+    }
+  }
+
+  /* ── Quick search shortcut ────────────────────────────── */
+  function quickSearch(keyword, category) {
+    document.getElementById('amazonKeyword').value  = keyword;
+    document.getElementById('amazonCategory').value = category;
+    runAmazonSearch();
+  }
+
+  /* ══ RENDER SEARCH RESULT CARDS ═══════════════════════════════ */
+  function renderSearchResults(products) {
+    const grid = document.getElementById('amazonResultsGrid');
+    if (!products.length) {
+      grid.innerHTML = `<div style="grid-column:1/-1; text-align:center; padding:40px; color:rgba(232,228,240,.4);">
+        <div style="font-size:36px; margin-bottom:12px;">🔍</div>
+        <p>No products found. Try a different keyword.</p>
+      </div>`;
+      return;
+    }
+
+    grid.innerHTML = products.map((p, idx) => {
+      const isDup = _existingAsins.has(p.asin);
+      return `
+        <div class="amz-result-card" id="arc-${p.asin}">
+          ${p.image
+            ? `<img src="${escHtml(p.image)}" alt="${escHtml(p.title)}" loading="lazy" onerror="this.style.display='none'">`
+            : `<div style="width:100%; height:180px; display:flex; align-items:center; justify-content:center; background:rgba(255,255,255,.05); font-size:40px;">🛒</div>`
+          }
+          <div class="arc-body">
+            <div class="arc-title" title="${escHtml(p.title)}">${escHtml(p.title)}</div>
+            <div class="arc-price">${fmtPrice(p.price)}</div>
+            <div class="arc-meta">
+              ${p.brand ? `<span>🏷 ${escHtml(p.brand)}</span>` : ''}
+              ${p.rating ? `<span>⭐ ${p.rating}</span>` : ''}
+              ${p.availability ? `<span>📦 ${escHtml(p.availability)}</span>` : ''}
+            </div>
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;">
+              <span class="arc-asin">ASIN: ${escHtml(p.asin)}</span>
+              ${isDup ? `<span class="amz-dup-badge">Already imported</span>` : ''}
+            </div>
+            <div class="arc-actions">
+              <button class="arc-import-btn" id="import-btn-${p.asin}"
+                onclick="importProduct(${idx})"
+                ${isDup ? 'disabled title="This ASIN is already in your store"' : ''}>
+                ${isDup ? '✓ Imported' : '⬇ Import to Pending'}
+              </button>
+              <button class="arc-preview-btn" onclick="openPreviewFromSearch(${idx})">👁</button>
+            </div>
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  /* ══ IMPORT ONE PRODUCT (from search results) ═════════════════ */
+  async function importProduct(idx) {
+    const p = _amazonSearchResults[idx];
+    if (!p) return;
+
+    // Duplicate check (local, no extra network call)
+    if (_existingAsins.has(p.asin)) {
+      toast(`⚠️ ASIN ${p.asin} is already in your store.`, true);
+      return;
+    }
+
+    const btn = document.getElementById(`import-btn-${p.asin}`);
+    if (btn) { btn.disabled = true; btn.textContent = '⏳ Importing…'; }
+
+    try {
+      // Build a full product record
+      const productToSave = {
+        asin:         p.asin,
+        name:         p.title,
+        description:  p.brand ? `By ${p.brand}. ${p.availability || ''}` : (p.availability || ''),
+        image:        p.image || null,
+        price:        p.price || 0,
+        originalPrice: p.originalPrice || null,
+        availability: p.availability || 'Check on Amazon',
+        affiliateLink: p.affiliateLink,
+        category:     p.category || document.getElementById('amazonCategory').value || 'Home Decor',
+        store:        'Amazon',
+        brand:        p.brand || null,
+        rating:       p.rating || 4.5,
+        reviews:      p.reviews || 0,
+        badge:        null,
+        features:     [],
+        height:       300,
+        savedCount:   '0',
+        gradient:     'linear-gradient(160deg,#e9c9c2,#3d2144)',
+        status:       'pending',  // ← NEVER auto-publish
+        importedBy:   'manual',
+        importedAt:   new Date().toISOString(),
+      };
+
+      const result = await VF.addPendingProduct(productToSave);
+
+      if (result && result.duplicate) {
+        toast(`⚠️ ASIN ${result.asin} is already in your store.`, true);
+        if (btn) btn.textContent = '✓ Already Imported';
+        return;
+      }
+
+      // Mark ASIN as used locally
+      _existingAsins.add(p.asin);
+
+      toast(`✅ "${p.title.substring(0,40)}…" added to Pending Approval!`);
+      if (btn) {
+        btn.textContent = '✓ In Pending Queue';
+        btn.style.background = 'rgba(46,125,50,.3)';
+        btn.style.color = '#81c784';
+      }
+
+      // Refresh pending list in background
+      loadPendingProducts();
+
+    } catch (err) {
+      console.error('[AMZ] Import error:', err);
+      toast('❌ Import failed: ' + err.message, true);
+      if (btn) { btn.disabled = false; btn.textContent = '⬇ Import to Pending'; }
+    }
+  }
+
+  /* ══ LOAD AND RENDER PENDING PRODUCTS ════════════════════════ */
+  async function loadPendingProducts() {
+    const list = document.getElementById('pendingProductsList');
+    list.innerHTML = `<div style="text-align:center; padding:30px; color:rgba(232,228,240,.35);">
+      <div class="spinner" style="margin:0 auto 12px;"></div>
+      <p>Loading products…</p>
+    </div>`;
+
+    try {
+      const all = await VF.getAllProducts();
+      // Only show Amazon-sourced or ASIN-tagged products in this tab
+      _pendingAllProducts = all.filter(p => p.store === 'Amazon' || p.asin);
+      renderPendingList(document.getElementById('pendingSearchInput').value || '');
+    } catch(err) {
+      list.innerHTML = `<div style="text-align:center; padding:30px; color:rgba(229,57,53,.6);">
+        ⚠️ Could not load products: ${err.message}
+      </div>`;
+    }
+  }
+
+  /* ── Switch between Pending / Rejected / All ────────────── */
+  function switchPendingFilter(mode) {
+    _pendingFilterMode = mode;
+    document.querySelectorAll('.amz-filter-tab').forEach(btn => btn.classList.remove('active'));
+    const activeBtn = document.getElementById('filterTab-' + mode);
+    if (activeBtn) activeBtn.classList.add('active');
+    renderPendingList(document.getElementById('pendingSearchInput').value || '');
+  }
+
+  /* ── Filter by search query ──────────────────────────── */
+  function filterPendingList(query) {
+    renderPendingList(query);
+  }
+
+  /* ── Render the pending products list ─────────────────── */
+  function renderPendingList(query = '') {
+    const list = document.getElementById('pendingProductsList');
+
+    let products = _pendingAllProducts;
+
+    // Filter by tab mode
+    if (_pendingFilterMode === 'pending')  products = products.filter(p => p.status === 'pending');
+    if (_pendingFilterMode === 'rejected') products = products.filter(p => p.status === 'rejected');
+    // 'all' = all imported amazon products regardless of status
+
+    // Filter by search query
+    if (query) {
+      const q = query.toLowerCase();
+      products = products.filter(p =>
+        (p.name || '').toLowerCase().includes(q) ||
+        (p.asin || '').toLowerCase().includes(q) ||
+        (p.category || '').toLowerCase().includes(q)
+      );
+    }
+
+    if (!products.length) {
+      const emptyMsg = {
+        pending:  'No pending products. Import Amazon products using the search above.',
+        rejected: 'No rejected products.',
+        all:      'No imported Amazon products yet. Use the search above to import.',
+      }[_pendingFilterMode];
+
+      list.innerHTML = `<div style="text-align:center; padding:60px 20px; color:rgba(232,228,240,.3);">
+        <div style="font-size:48px; margin-bottom:16px;">📭</div>
+        <p>${emptyMsg}</p>
+      </div>`;
+      return;
+    }
+
+    list.innerHTML = products.map(p => {
+      const statusCls = {pending:'status-pending', published:'status-published', rejected:'status-rejected'}[p.status] || 'status-pending';
+      const statusLabel = {pending:'⏳ Pending', published:'✅ Published', rejected:'❌ Rejected'}[p.status] || '⏳ Pending';
+
+      return `
+        <div class="amz-pending-card" id="pending-card-${p.id}">
+          ${p.image
+            ? `<img class="apc-thumb" src="${escHtml(p.image)}" alt="${escHtml(p.name || '')}" loading="lazy" onerror="this.style.display='none'">`
+            : `<div class="apc-thumb-placeholder">🛒</div>`
+          }
+          <div class="apc-info">
+            <div class="apc-title">${escHtml(p.name || 'Unnamed Product')}</div>
+            <div class="apc-meta">
+              <span>📦 ${escHtml(p.category || 'Uncategorized')}</span>
+              ${p.asin ? `<span style="font-family:monospace; font-size:11px;">ASIN: ${escHtml(p.asin)}</span>` : ''}
+              ${p.brand ? `<span>🏷 ${escHtml(p.brand)}</span>` : ''}
+              <span>⭐ ${p.rating || 4.5}</span>
+              <span class="status-badge ${statusCls}">${statusLabel}</span>
+            </div>
+            <div class="apc-price">${fmtPrice(p.price)}</div>
+            ${p.description ? `<div style="font-size:12px; color:rgba(232,228,240,.35); margin-top:6px; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;">${escHtml(p.description)}</div>` : ''}
+            <div style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+              <a href="${escHtml(p.affiliateLink || '#')}" target="_blank" rel="noopener" style="font-size:11px; color:rgba(201,161,90,.6); text-decoration:none;">🔗 View on Amazon ↗</a>
+              ${p.importedAt ? `<span style="font-size:11px; color:rgba(232,228,240,.2);">Imported ${new Date(p.importedAt).toLocaleDateString('en-IN')}</span>` : ''}
+            </div>
+          </div>
+          <div class="apc-actions">
+            ${p.status !== 'published' ? `
+            <button class="amz-approve-btn" onclick="approveProduct('${p.id}')">
+              ✅ YES, Approve
+            </button>` : `
+            <button style="padding:9px 18px; border-radius:8px; font-size:12px; background:rgba(46,125,50,.1); color:#81c784; border:1px solid rgba(46,125,50,.2); cursor:default;">✓ Published</button>
+            `}
+            ${p.status !== 'rejected' ? `
+            <button class="amz-reject-btn" onclick="rejectProduct('${p.id}')">❌ Reject</button>` : ''}
+            <button class="amz-preview-link-btn" onclick="openPreviewFromPending('${p.id}')">👁 Preview</button>
+            <button class="amz-preview-link-btn" style="color:rgba(229,57,53,.5); border-color:rgba(229,57,53,.15);" onclick="deletePendingProduct('${p.id}')">🗑 Delete</button>
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  /* ══ APPROVE PRODUCT ════════════════════════════════════════ */
+  async function approveProduct(id) {
+    const card = document.getElementById('pending-card-' + id);
+    const product = _pendingAllProducts.find(p => p.id === id);
+    if (!product) return;
+
+    // Confirm approval
+    if (!confirm(`✅ Approve and PUBLISH "${(product.name || 'this product').substring(0, 60)}"?\n\nThis will make it visible to all visitors on your website with your Amazon affiliate link.`)) return;
+
+    // Update button state
+    if (card) card.style.opacity = '0.6';
+
+    try {
+      const result = await VF.updateProductStatus(id, 'published');
+      if (!result) throw new Error('Update returned null');
+
+      toast(`✅ "${(product.name || '').substring(0, 40)}…" is now LIVE on your website!`);
+
+      // Update local state
+      const idx = _pendingAllProducts.findIndex(p => p.id === id);
+      if (idx > -1) _pendingAllProducts[idx].status = 'published';
+
+      // Re-render
+      renderPendingList(document.getElementById('pendingSearchInput').value || '');
+
+    } catch (err) {
+      console.error('[AMZ] Approve error:', err);
+      toast('❌ Failed to approve product: ' + err.message, true);
+      if (card) card.style.opacity = '1';
+    }
+  }
+
+  /* ══ REJECT PRODUCT ═════════════════════════════════════════ */
+  async function rejectProduct(id) {
+    const product = _pendingAllProducts.find(p => p.id === id);
+    if (!product) return;
+
+    if (!confirm(`❌ Reject "${(product.name || 'this product').substring(0, 60)}"?\n\nIt will be marked as rejected and removed from the pending queue.`)) return;
+
+    const card = document.getElementById('pending-card-' + id);
+    if (card) card.style.opacity = '0.5';
+
+    try {
+      const result = await VF.updateProductStatus(id, 'rejected');
+      if (!result) throw new Error('Update returned null');
+
+      toast(`🚫 Product rejected.`);
+
+      const idx = _pendingAllProducts.findIndex(p => p.id === id);
+      if (idx > -1) _pendingAllProducts[idx].status = 'rejected';
+
+      renderPendingList(document.getElementById('pendingSearchInput').value || '');
+
+    } catch (err) {
+      console.error('[AMZ] Reject error:', err);
+      toast('❌ Failed to reject product: ' + err.message, true);
+      if (card) card.style.opacity = '1';
+    }
+  }
+
+  /* ══ DELETE PENDING PRODUCT ══════════════════════════════════ */
+  async function deletePendingProduct(id) {
+    const product = _pendingAllProducts.find(p => p.id === id);
+    if (!product) return;
+
+    if (!confirm(`🗑 Permanently delete "${(product.name || 'this product').substring(0, 60)}"?\n\nThis cannot be undone.`)) return;
+
+    const card = document.getElementById('pending-card-' + id);
+    if (card) card.style.opacity = '0.5';
+
+    try {
+      await VF.deleteProduct(id);
+      toast('🗑️ Product deleted.');
+      _pendingAllProducts = _pendingAllProducts.filter(p => p.id !== id);
+      renderPendingList(document.getElementById('pendingSearchInput').value || '');
+    } catch(err) {
+      toast('❌ Delete failed: ' + err.message, true);
+      if (card) card.style.opacity = '1';
+    }
+  }
+
+  /* ══ AUTO DISCOVERY ═════════════════════════════════════════ */
+  async function runDiscovery() {
+    const btn = document.getElementById('discoveryBtn');
+    btn.disabled = true;
+    btn.innerHTML = '⏳ Discovering…';
+
+    try {
+      const res  = await fetch(fnUrl('amazonDiscovery'));
+      const data = await res.json();
+
+      if (data.message) {
+        // No credentials configured
+        toast(`ℹ️ ${data.message}`, true);
+      } else {
+        toast(`🤖 Discovery complete! ${data.discovered} new product${data.discovered !== 1 ? 's' : ''} added to Pending (${data.skipped} skipped as duplicates).`);
+        await loadPendingProducts();
+      }
+    } catch(err) {
+      console.error('[AMZ] Discovery error:', err);
+      toast('❌ Auto-discovery failed: ' + err.message, true);
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = '🤖 Run Auto-Discovery';
+    }
+  }
+
+  /* ══ PRODUCT PREVIEW MODAL ══════════════════════════════════ */
+  function openPreviewFromSearch(idx) {
+    const p = _amazonSearchResults[idx];
+    if (!p) return;
+    _previewCurrentProduct = { ...p, _mode: 'search', _idx: idx };
+    showPreviewModal(_previewCurrentProduct);
+  }
+
+  function openPreviewFromPending(id) {
+    const p = _pendingAllProducts.find(prod => prod.id === id);
+    if (!p) return;
+    // Normalise field names (pending products use `name` not `title`)
+    _previewCurrentProduct = { ...p, title: p.name || p.title, _mode: 'pending' };
+    showPreviewModal(_previewCurrentProduct);
+  }
+
+  function showPreviewModal(p) {
+    const content = document.getElementById('amazonPreviewContent');
+    const isPending = p._mode === 'pending';
+
+    content.innerHTML = `
+      ${p.image ? `<img class="amz-preview-img" src="${escHtml(p.image)}" alt="${escHtml(p.title||p.name||'')}" onerror="this.style.display='none'">` : ''}
+      <div class="amz-preview-body">
+        <div style="display:flex; align-items:center; gap:10px; margin-bottom:10px; flex-wrap:wrap;">
+          <span style="font-size:11px; font-weight:800; padding:4px 10px; border-radius:999px; background:#FF9900; color:#000;">Amazon India</span>
+          ${p.category ? `<span style="font-size:11px; color:rgba(232,228,240,.45);">${escHtml(p.category)}</span>` : ''}
+          ${p.asin ? `<span style="font-size:11px; font-family:monospace; color:rgba(232,228,240,.25);">ASIN: ${escHtml(p.asin)}</span>` : ''}
+        </div>
+        <div class="amz-preview-title">${escHtml(p.title || p.name || 'Unnamed Product')}</div>
+        <div class="amz-preview-price">${fmtPrice(p.price)}</div>
+        <div class="amz-preview-meta">
+          ${p.brand ? `<span>🏷 ${escHtml(p.brand)}</span>` : ''}
+          ${p.rating ? `<span>⭐ ${p.rating}</span>` : ''}
+          ${p.reviews ? `<span>💬 ${p.reviews} reviews</span>` : ''}
+          ${p.availability ? `<span>📦 ${escHtml(p.availability)}</span>` : ''}
+        </div>
+        ${p.description ? `<p style="font-size:13px; color:rgba(232,228,240,.5); line-height:1.6; margin-bottom:12px;">${escHtml(p.description)}</p>` : ''}
+        <div style="font-size:12px; color:rgba(201,161,90,.5); font-weight:700; margin-bottom:6px;">Affiliate Link (will open for visitors):</div>
+        <span class="amz-preview-afflink">${escHtml(p.affiliateLink || '')}</span>
+        <div style="font-size:11px; color:rgba(232,228,240,.25); margin-top:16px; font-style:italic;">
+          As an Amazon Associate, Velvet FINDS earns from qualifying purchases. This link includes your tracking ID.
+        </div>
+      </div>`;
+
+    // Set up modal action buttons
+    const approveBtn = document.getElementById('previewApproveBtn');
+    const rejectBtn  = document.getElementById('previewRejectBtn');
+
+    approveBtn.onclick = async () => {
+      closePreview();
+      if (isPending && p.id) {
+        await approveProduct(p.id);
+      } else {
+        // From search results — import first, then approve
+        await importProduct(p._idx);
+        // Find the just-imported product and approve it
+        await loadPendingProducts();
+        const justImported = _pendingAllProducts.find(prod => prod.asin === p.asin);
+        if (justImported) await approveProduct(justImported.id);
+      }
+    };
+
+    rejectBtn.style.display = isPending ? 'block' : 'none';
+    rejectBtn.onclick = async () => {
+      closePreview();
+      if (isPending && p.id) await rejectProduct(p.id);
+    };
+
+    document.getElementById('amazonPreviewModal').style.display = 'block';
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closePreview() {
+    document.getElementById('amazonPreviewModal').style.display = 'none';
+    document.body.style.overflow = '';
+    _previewCurrentProduct = null;
+  }
+
+  // Close modal on backdrop click
+  document.getElementById('amazonPreviewModal').addEventListener('click', function(e) {
+    if (e.target === this) closePreview();
+  });
+
+  /* ── HTML escape helper ────────────────────────────────── */
+  function escHtml(str) {
+    if (str == null) return '';
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
+  /* ── End of Amazon Import System ─────────────────────── */
+
+</script>
+</body>
+</html>

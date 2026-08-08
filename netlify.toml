@@ -1,0 +1,26 @@
+[build]
+  functions = "functions"
+  publish   = "."
+
+[functions]
+  node_bundler = "esbuild"
+
+# Dev settings — run with `netlify dev` for full local testing including functions
+[dev]
+  port    = 8888
+  command = "echo 'Serving Velvet FINDS static site with Netlify functions…'"
+
+# Environment variable documentation (set these in Netlify site settings):
+# AMAZON_ACCESS_KEY    — AWS access key for Amazon PA-API v5
+# AMAZON_SECRET_KEY    — AWS secret key for Amazon PA-API v5
+# AMAZON_PARTNER_TAG   — Your Amazon Associates tracking ID (e.g. velvetfinds-21)
+# AMAZON_REGION        — PA-API region (use us-east-1 for Amazon India)
+# BIN_ID               — JSONBin.io bin ID for product storage
+# JSONBIN_API_KEY      — JSONBin.io master API key
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options    = "DENY"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy    = "strict-origin-when-cross-origin"

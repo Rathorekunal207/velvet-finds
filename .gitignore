@@ -1,0 +1,13 @@
+# Files to exclude from Git (sensitive/generated files)
+*.log
+*.tmp
+.env
+.env.local
+node_modules/
+bin_id.txt
+blog_bin_id.txt
+check_bin.ps1
+create_bin.ps1
+create_blog_bin.ps1
+server.ps1
+test_put.ps1

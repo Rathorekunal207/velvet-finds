@@ -1,0 +1,5 @@
+# Netlify Clean Rewrite Rules for Velvet FINDS
+/blog/:slug   /article.html?slug=:slug   200
+/product/:id  /product.html?id=:id       200
+/blog         /blog.html                 200
+/admin        /admin.html                200

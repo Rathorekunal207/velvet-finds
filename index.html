@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Velvet FINDS — Curated Finds, Honest Reviews, Smart Shopping</title>
+  <meta name="description" content="Every Pin, hand-picked and reviewed — aesthetic finds, honest reviews and smart shopping across Amazon, Flipkart, Myntra and more.">
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="shimmer.css">
+  <script src="ga4.js" defer></script>
+</head>
+<body>
+
+<!-- ====== NAV ====== -->
+<header class="site">
+  <div class="wrap nav-row">
+    <a href="index.html" class="logo">
+      <div class="logo-img-wrap"><img id="siteLogoNav" src="velvet-finds-logo.jpeg" alt="Velvet FINDS mascot"></div>
+      <span id="siteNameNav" style="font-family:var(--font-serif); font-weight:600;">Velvet FINDS</span>
+    </a>
+    <nav class="links">
+      <a href="#shop">Shop</a>
+      <a href="#categories">Categories</a>
+      <a href="blog.html">Blog</a>
+      <a href="#editors">Editor's Picks</a>
+      <a href="#about">About</a>
+    </nav>
+    <div class="nav-actions">
+      <button class="icon-btn" onclick="document.getElementById('searchOverlay').style.display='flex'" aria-label="Search">🔍</button>
+      <a href="#" class="pin-btn" id="navPinBtn" target="_blank">📌 Follow on Pinterest</a>
+    </div>
+  </div>
+</header>
+
+<!-- Search Overlay -->
+<div id="searchOverlay" style="display:none; position:fixed; inset:0; background:rgba(32,28,34,0.65); backdrop-filter:blur(10px); z-index:999; align-items:center; justify-content:center;" onclick="if(event.target===this)this.style.display='none';">
+  <div style="background:var(--bg-card); border-radius:20px; padding:32px; width:min(600px,92vw); box-shadow:var(--sh-pop); border:1px solid var(--line);">
+    <div style="display:flex; gap:14px; margin-bottom:20px;">
+      <input id="searchInput" type="text" placeholder="Search products, categories…" style="flex:1; border:1.5px solid var(--line); border-radius:12px; padding:14px 18px; font-size:16px; font-family:var(--font-sans); background:var(--bg); outline:none;" oninput="doSearch(this.value)">
+      <button onclick="document.getElementById('searchOverlay').style.display='none'" style="padding:14px 20px; border-radius:12px; border:1px solid var(--line); background:transparent; font-size:15px; cursor:pointer;">✕</button>
+    </div>
+    <div id="searchResults" style="display:flex; flex-direction:column; gap:10px; max-height:360px; overflow-y:auto;"></div>
+  </div>
+</div>
+
+<!-- ====== HERO ====== -->
+<section class="hero">
+  <svg class="hero-squiggle" viewBox="0 0 1100 420" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <path class="squiggle-path" d="M100 50 Q 230 -20 350 95 Q 460 210 310 270 Q 150 340 270 220 Q 365 125 490 55 Q 660 -35 780 130 Q 870 260 720 305 Q 590 345 710 270 Q 830 200 960 290" fill="none" stroke="#c9a15a" stroke-width="11" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>
+  <div class="wrap hero-inner">
+    <span class="eyebrow">✦ New Season Edit Now Live</span>
+    <h1 style="margin-top:18px;" id="heroHeading">Aesthetic finds,<br><em>chosen with care.</em></h1>
+    <p class="tag" id="heroSub">Every Pin, hand-picked and reviewed — so you never have to wonder if it's actually worth the click.</p>
+    <div class="hero-cta">
+      <a href="#shop" class="btn-gold">🛍️ Explore Trending Finds</a>
+      <a href="#" class="btn-outline" id="heroPinBtn" target="_blank">📌 Follow on Pinterest</a>
+    </div>
+    <div class="hero-mascot" id="mascotHeroContainer"></div>
+  </div>
+  <div class="wrap hero-strip">
+    <span>1,200+ Curated Products</span>
+    <span>Honest, Tested Reviews</span>
+    <span>Updated Weekly</span>
+    <span>Amazon · Myntra · Flipkart · Ajio</span>
+  </div>
+</section>
+
+<!-- ====== CATEGORIES ====== -->
+<section id="categories" style="padding:72px 0;">
+  <div class="wrap">
+    <div class="sec-head">
+      <div>
+        <span class="eyebrow-sm">Browse</span>
+        <h2>Shop by category</h2>
+      </div>
+      <a href="#" class="see-all">View all →</a>
+    </div>
+    <div class="cat-grid" id="catGrid"></div>
+  </div>
+</section>
+
+<!-- ====== PINTEREST MASONRY FEED ====== -->
+<section id="shop" style="padding:60px 0;">
+  <div class="wrap">
+    <div class="sec-head">
+      <div>
+        <span class="eyebrow-sm">Your Pinterest Feed</span>
+        <h2>Trending Finds ✨</h2>
+        <p>Click any card to see full details & buy instantly. Scroll for more.</p>
+      </div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;" id="filterBtns">
+        <button class="filter-btn active" data-cat="All" onclick="setFilter('All',this)">All</button>
+      </div>
+    </div>
+    <style>
+      .filter-btn { padding:9px 20px; border-radius:999px; border:1.5px solid var(--line); background:transparent; font-size:13px; font-weight:700; cursor:pointer; transition:all .22s; font-family:var(--font-sans); }
+      .filter-btn:hover, .filter-btn.active { background:var(--plum-900); color:#fbf6ef; border-color:var(--plum-900); }
+    </style>
+    <div class="masonry" id="feed" style="margin-top:28px;"></div>
+    <div id="feedLoader"><div class="spinner"></div>Loading more finds…</div>
+  </div>
+</section>
+
+<!-- ====== EDITOR'S PICKS ====== -->
+<section id="editors" style="padding:60px 0;">
+  <div class="wrap">
+    <div style="background:linear-gradient(130deg,var(--gold-100),var(--blush)); border-radius:var(--r-lg); padding:60px 52px; display:grid; grid-template-columns:1.15fr 1fr; gap:44px; align-items:center; border:1px solid rgba(201,161,90,.2);">
+      <div>
+        <span class="eyebrow" style="background:rgba(251,246,239,.7);">✦ Editor's Picks</span>
+        <h3 id="siteEditorHeading" style="font-family:var(--font-serif); font-weight:450; font-size:clamp(24px,3vw,34px); margin-top:16px; line-height:1.2;">Five things in my cart<br>this month.</h3>
+        <p id="siteEditorText" style="color:rgba(43,23,48,.7); margin-top:14px; font-size:14.5px; line-height:1.7; max-width:420px;">A short, honest list — no filler, no 50-item roundups. Just what I'd actually buy again.</p>
+        <a href="#shop" class="btn-gold" style="display:inline-flex; margin-top:26px;">Read the Edit</a>
+      </div>
+      <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:14px;">
+        <div style="aspect-ratio:3/4; border-radius:16px; background:linear-gradient(160deg,#e3c98a,#c9a15a); box-shadow:0 16px 30px -12px rgba(43,23,48,.25);"></div>
+        <div style="aspect-ratio:3/4; border-radius:16px; background:linear-gradient(160deg,#e9c9c2,#c9a15a); box-shadow:0 16px 30px -12px rgba(43,23,48,.25); transform:translateY(20px);"></div>
+        <div style="aspect-ratio:3/4; border-radius:16px; background:linear-gradient(160deg,#3d2144,#2b1730); box-shadow:0 16px 30px -12px rgba(43,23,48,.25);"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ====== TRUST ====== -->
+<section style="padding:60px 0;">
+  <div class="wrap">
+    <div class="trust">
+      <div class="trust-item"><div class="num">1,200+</div><div class="lbl">Products Reviewed</div></div>
+      <div class="trust-item"><div class="num" id="liveVisitors">—</div><div class="lbl">Total Visitors</div></div>
+      <div class="trust-item"><div class="num">4.8★</div><div class="lbl">Avg. Rating</div></div>
+      <div class="trust-item"><div class="num">100%</div><div class="lbl">Independently Chosen</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ====== LATEST FROM OUR BLOG ====== -->
+<section style="padding:60px 0;">
+  <div class="wrap">
+    <div class="sec-head">
+      <div>
+        <span class="eyebrow-sm" style="font-size:11px;letter-spacing:3px;text-transform:uppercase;color:var(--gold-500);font-weight:800;display:block;margin-bottom:6px;">Ideas &amp; Inspiration</span>
+        <h2 style="font-family:var(--font-serif);font-weight:450;font-size:clamp(24px,3vw,36px);">Latest From Our Blog ✨</h2>
+      </div>
+      <a href="blog.html" class="see-all">View All Articles →</a>
+    </div>
+    <div id="homeBlogGrid" class="home-blog-grid">
+      <div class="blog-skeleton"></div>
+      <div class="blog-skeleton"></div>
+      <div class="blog-skeleton"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ====== NEWSLETTER ====== -->
+<section style="padding:60px 0 80px;">
+  <div class="wrap">
+    <div class="newsletter">
+      <h3>Get the weekly edit</h3>
+      <p>New finds, deal alerts & Pinterest-worthy picks — straight to your inbox.</p>
+      <form class="nl-form" onsubmit="event.preventDefault(); this.querySelector('button').textContent='Subscribed ✓';">
+        <input type="email" placeholder="you@email.com" required>
+        <button type="submit">Subscribe</button>
+      </form>
+    </div>
+  </div>
+</section>
+
+<!-- ====== FOOTER ====== -->
+<footer>
+  <div class="wrap">
+    <div class="foot-grid">
+      <div>
+        <a href="index.html" class="logo" style="display:flex; gap:11px; margin-bottom:16px;">
+          <div class="logo-img-wrap" style="width:38px;height:38px;"><img id="siteLogoFoot" src="velvet-finds-logo.jpeg" alt="Velvet FINDS"></div>
+          <span id="siteNameFoot" style="font-family:var(--font-serif); font-size:18px; font-weight:600;">Velvet FINDS</span>
+        </a>
+        <p id="siteFooterDesc" style="font-size:13.5px; color:var(--ink-soft); max-width:270px; line-height:1.7;">Curated Finds • Honest Reviews • Smart Shopping. Affiliate-vetted picks across Amazon, Myntra, Flipkart & more.</p>
+      </div>
+      <div><h4>Shop</h4><ul><li><a href="#">Fashion</a></li><li><a href="#">Home Decor</a></li><li><a href="#">Beauty</a></li><li><a href="#">Tech &amp; Gadgets</a></li><li><a href="#">Under ₹500</a></li></ul></div>
+      <div><h4>Company</h4><ul><li><a href="#about">About Velvet FINDS</a></li><li><a href="blog.html">Blog</a></li><li><a href="#">Contact</a></li><li><a href="#">Affiliate Disclosure</a></li></ul></div>
+      <div><h4>Legal</h4><ul><li><a href="#">Privacy Policy</a></li><li><a href="#">Terms &amp; Conditions</a></li><li><a href="#">Cookie Policy</a></li></ul></div>
+    </div>
+    <div class="foot-bottom">
+      <span>© 2026 Velvet FINDS. As an Amazon affiliate, we earn from qualifying purchases. <a href="admin.html" style="color:var(--gold-500); margin-left:8px; font-weight:700;">⚙ Admin</a></span>
+      <div class="foot-social"><a href="#" title="Pinterest" id="footPinBtn" target="_blank">📌</a><a href="#" title="Instagram" id="footInstaBtn" target="_blank">📷</a><a href="#" title="Email">✉</a></div>
+    </div>
+  </div>
+</footer>
+
+<script src="data.js"></script>
+<script src="mascot.js"></script>
+<script>
+  VF.init();
+  VF.recordVisit();
+
+  /* Load Site Settings */
+  const s = VF.getSettings();
+  if (s.siteName) {
+    const navName = document.getElementById('siteNameNav');
+    const footName = document.getElementById('siteNameFoot');
+    if (navName) navName.textContent = s.siteName;
+    if (footName) footName.textContent = s.siteName;
+  }
+  if (s.heroHeading) {
+    const hh = document.getElementById('heroHeading');
+    if (hh) hh.innerHTML = s.heroHeading;
+  }
+  if (s.heroSub) {
+    const hs = document.getElementById('heroSub');
+    if (hs) hs.textContent = s.heroSub;
+  }
+  if (s.pinterestUrl) {
+    const np = document.getElementById('navPinBtn');
+    const hp = document.getElementById('heroPinBtn');
+    const fp = document.getElementById('footPinBtn');
+    if (np) np.href = s.pinterestUrl;
+    if (hp) hp.href = s.pinterestUrl;
+    if (fp) fp.href = s.pinterestUrl;
+  }
+  if (s.instagramUrl) {
+    const fi = document.getElementById('footInstaBtn');
+    if (fi) fi.href = s.instagramUrl;
+  }
+  if (s.logo) {
+    const navLogo = document.getElementById('siteLogoNav');
+    const heroLogo = document.getElementById('siteLogoHero');
+    const footLogo = document.getElementById('siteLogoFoot');
+    if (navLogo) navLogo.src = s.logo;
+    if (heroLogo) heroLogo.src = s.logo;
+    if (footLogo) footLogo.src = s.logo;
+  }
+  if (s.editorHeading) {
+    const eh = document.getElementById('siteEditorHeading');
+    if (eh) eh.innerHTML = s.editorHeading;
+  }
+  if (s.editorText) {
+    const et = document.getElementById('siteEditorText');
+    if (et) et.textContent = s.editorText;
+  }
+  if (s.footerDesc) {
+    const fd = document.getElementById('siteFooterDesc');
+    if (fd) fd.textContent = s.footerDesc;
+  }
+
+  /* Update live visitor count */
+  const a = VF.getAnalytics();
+  const lv = document.getElementById('liveVisitors');
+  if (lv) lv.textContent = (a.totalVisits || 0).toLocaleString();
+
+  /* ── CATEGORIES (from localStorage, sync) ───────── */
+  const cats = VF.getCategories();
+  const catGrid = document.getElementById('catGrid');
+  if (catGrid) {
+    catGrid.innerHTML = '';
+    cats.forEach(cat => {
+      const swatchStyle = cat.image
+        ? `background-image:url('${cat.image}'); background-size:cover; background-position:center;`
+        : `background:${cat.gradient};`;
+      const swatchContent = cat.image ? '' : cat.name.charAt(0);
+      catGrid.innerHTML += `
+        <div class="cat-card" onclick="setFilter('${cat.name}',null); document.getElementById('shop').scrollIntoView({behavior:'smooth'})">
+          <div class="cat-swatch" style="${swatchStyle}">${swatchContent}</div>
+          <span>${cat.name}</span>
+        </div>`;
+    });
+  }
+
+  /* ── FILTER BUTTONS ─────────────────────────────── */
+  let activeFilter = 'All';
+  const fbWrap = document.getElementById('filterBtns');
+  if (fbWrap) {
+    fbWrap.innerHTML = `<button class="filter-btn active" data-cat="All" onclick="setFilter('All',this)">All</button>`;
+    cats.forEach(cat => {
+      fbWrap.innerHTML += `<button class="filter-btn" data-cat="${cat.name}" onclick="setFilter('${cat.name}',this)">${cat.name}</button>`;
+    });
+  }
+
+  function setFilter(cat, btn) {
+    activeFilter = cat;
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    if (btn) btn.classList.add('active');
+    else { const fb = document.querySelector(`[data-cat="All"]`); if(fb) fb.classList.add('active'); }
+    if (window.VelvetMascot) {
+      VelvetMascot.render('#mascotHeroContainer', cat === 'All' ? 'home' : cat);
+    }
+    renderFeed(false);
+  }
+
+  /* ── MASONRY FEED (ASYNC — fetches from cloud DB) ── */
+  const feed   = document.getElementById('feed');
+  const loader = document.getElementById('feedLoader');
+  let batch = 0, allProducts = [], obs;
+
+  function buildCard(p, i) {
+    const disc = p.originalPrice ? Math.round((1 - p.price/p.originalPrice)*100) : 0;
+    const card = document.createElement('div');
+    card.className = 'pin-card';
+    card.style.animationDelay = (i * 0.045) + 's';
+    card.setAttribute('data-id', p.id);
+    card.innerHTML = `
+      <div class="pin-media" style="${p.image ? '' : `background:${p.gradient};`} height:${p.height || 280}px;">
+        ${p.image ? `<img src="${p.image}" alt="${p.name}" style="width:100%;height:100%;object-fit:cover;display:block;" loading="lazy">` : ''}
+        <div class="pin-overlay"></div>
+        <span class="save-btn">📌 Save</span>
+        ${p.badge ? `<span style="position:absolute;top:11px;left:11px;" class="badge badge-gold">${p.badge}</span>` : ''}
+      </div>
+      <div class="pin-body">
+        <div class="pin-cat">${p.category}</div>
+        <div class="pin-title">${p.name}</div>
+        <div class="pin-meta">
+          <span class="stars">★★★★★ <span style="color:var(--ink-soft);font-weight:600;">${p.rating}</span></span>
+          <span class="price">
+            ${p.originalPrice ? `<span class="was">₹${p.originalPrice.toLocaleString()}</span>` : ''}
+            ₹${p.price.toLocaleString()}
+            ${disc ? `<span class="discount-tag">${disc}% off</span>` : ''}
+          </span>
+        </div>
+      </div>`;
+    card.addEventListener('click', () => {
+      VF.recordProductClick(p.id);
+      window.location.href = `product.html?id=${p.id}`;
+    });
+    return card;
+  }
+
+  function renderFeed(append = true) {
+    if (!append) { feed.innerHTML = ''; batch = 0; }
+    let products = allProducts.filter(p => p.status !== 'draft');
+    if (activeFilter !== 'All') products = products.filter(p => p.category === activeFilter);
+    const start = batch * 8;
+    const slice = products.slice(start, start + 8);
+    if (!slice.length) {
+      loader.innerHTML = `<span style="color:var(--gold-500);font-size:18px;margin-right:8px;">✦</span> You've seen it all — for now`;
+      if(obs) obs.disconnect(); return;
+    }
+    const frag = document.createDocumentFragment();
+    slice.forEach((p, i) => frag.appendChild(buildCard(p, i)));
+    feed.appendChild(frag);
+    batch++;
+    loader.innerHTML = '<div class="spinner"></div>Loading more finds…';
+    if(obs) obs.observe(loader);
+  }
+
+  function showSkeletons() {
+    feed.innerHTML = Array(8).fill(0).map(() => `
+      <div class="pin-card" style="pointer-events:none;">
+        <div style="background:linear-gradient(90deg,#f0ebe6 25%,#e8e0d8 50%,#f0ebe6 75%);background-size:200% 100%;animation:shimmer 1.4s infinite;border-radius:14px;height:280px;"></div>
+        <div class="pin-body">
+          <div style="background:#ede8e3;border-radius:6px;height:12px;width:50%;margin-bottom:8px;"></div>
+          <div style="background:#ede8e3;border-radius:6px;height:16px;width:85%;margin-bottom:8px;"></div>
+          <div style="background:#ede8e3;border-radius:6px;height:12px;width:40%;"></div>
+        </div>
+      </div>`).join('');
+  }
+
+  async function loadFeed() {
+    showSkeletons();
+    loader.innerHTML = '<div class="spinner"></div>Fetching latest finds…';
+    try {
+      allProducts = await VF.getProducts();
+    } catch(e) {
+      console.error(e);
+    }
+    obs = new IntersectionObserver(entries => {
+      if (entries[0].isIntersecting) { obs.disconnect(); setTimeout(() => renderFeed(true), 450); }
+    }, { rootMargin: '400px' });
+    renderFeed(false);
+  }
+
+  loadFeed();
+  if (window.VelvetMascot) {
+    VelvetMascot.render('#mascotHeroContainer', 'home');
+  }
+
+  // Auto-refresh every 60 seconds
+  setInterval(async () => {
+    VF.invalidateCache();
+    allProducts = await VF.getProducts();
+    renderFeed(false);
+  }, 60000);
+
+  /* ── LATEST BLOGS ────────────────────────────────── */
+  async function loadLatestBlogs() {
+    const grid = document.getElementById('homeBlogGrid');
+    if (!grid) return;
+    try {
+      const blogs = await VF.getBlogs();
+      const latest = blogs.slice(0, 3);
+      if (!latest.length) {
+        grid.innerHTML = '<p style="color:var(--ink-soft);grid-column:1/-1;text-align:center;padding:20px;">No blog posts available yet.</p>';
+        return;
+      }
+      grid.innerHTML = latest.map(b => `
+        <article class="blog-card" onclick="window.location.href='article.html?slug=${b.slug}'">
+          <div class="blog-card-img-wrap">
+            <img src="${b.coverImage || 'https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=600&q=80'}" alt="${b.title}" loading="lazy">
+            <span class="blog-cat-badge">${b.category}</span>
+          </div>
+          <div class="blog-card-body">
+            <h3 class="blog-card-title" style="font-size:16px;">${b.title}</h3>
+            <p class="blog-card-excerpt">${b.excerpt}</p>
+            <div class="blog-card-meta">
+              <span>✍️ ${b.author || 'Velvet FINDS'}</span>
+              <span>⏱ ${b.readTime || 5} min read</span>
+            </div>
+            <span class="blog-read-more">Read Article →</span>
+          </div>
+        </article>`).join('');
+    } catch(e) {
+      console.error('[VF] Failed to load home blogs:', e);
+    }
+  }
+  loadLatestBlogs();
+</script>
+</body>
+</html>
+
