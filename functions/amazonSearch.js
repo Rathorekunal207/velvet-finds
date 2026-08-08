@@ -18,80 +18,7 @@
  * Returns JSON: { products: [ { asin, title, image, price, originalPrice, availability, affiliateLink, category, brand, rating, reviews } ] }
  */
 
-const crypto = require('crypto');
-
-/* ── AWS Signature V4 helpers ─────────────────────────────────── */
-
-function hmac(key, data) {
-  return crypto.createHmac('sha256', key).update(data).digest();
-}
-
-function hash(data) {
-  return crypto.createHash('sha256').update(data).digest('hex');
-}
-
-function getSigningKey(secretKey, dateStamp, region, service) {
-  const kDate    = hmac('AWS4' + secretKey, dateStamp);
-  const kRegion  = hmac(kDate, region);
-  const kService = hmac(kRegion, service);
-  const kSigning = hmac(kService, 'aws4_request');
-  return kSigning;
-}
-
-function buildAuthHeader({ method, url, body, accessKey, secretKey, region, service, dateTime }) {
-  const parsedUrl  = new URL(url);
-  const host       = parsedUrl.hostname;
-  const path       = parsedUrl.pathname;
-
-  const datestamp  = dateTime.substring(0, 8);
-  const amzDate    = dateTime;
-
-  const payloadHash = hash(body);
-
-  const canonicalHeaders =
-    `content-encoding:amz-sdk-request\n` +
-    `content-type:application/json; charset=UTF-8\n` +
-    `host:${host}\n` +
-    `x-amz-date:${amzDate}\n` +
-    `x-amz-target:com.amazon.paapi5.v1.ProductAdvertisingAPIv1.SearchItems\n`;
-
-  const signedHeaders = 'content-encoding;content-type;host;x-amz-date;x-amz-target';
-
-  const canonicalRequest = [
-    method,
-    path,
-    '',                  // no query string
-    canonicalHeaders,
-    signedHeaders,
-    payloadHash,
-  ].join('\n');
-
-  const credentialScope = `${datestamp}/${region}/${service}/aws4_request`;
-
-  const stringToSign = [
-    'AWS4-HMAC-SHA256',
-    amzDate,
-    credentialScope,
-    hash(canonicalRequest),
-  ].join('\n');
-
-  const signingKey = getSigningKey(secretKey, datestamp, region, service);
-  const signature  = crypto.createHmac('sha256', signingKey).update(stringToSign).digest('hex');
-
-  const authorizationHeader =
-    `AWS4-HMAC-SHA256 Credential=${accessKey}/${credentialScope}, ` +
-    `SignedHeaders=${signedHeaders}, ` +
-    `Signature=${signature}`;
-
-  return {
-    Authorization: authorizationHeader,
-    'Content-Encoding': 'amz-sdk-request',
-    'Content-Type': 'application/json; charset=UTF-8',
-    Host: host,
-    'X-Amz-Date': amzDate,
-    'X-Amz-Target': 'com.amazon.paapi5.v1.ProductAdvertisingAPIv1.SearchItems',
-  };
-}
+const { getAmazonOAuthToken } = require('./amazonAuth');
 
 /* ── PA-API search index mapping ─────────────────────────────── */
 const SEARCH_INDEX_MAP = {
@@ -176,22 +103,27 @@ exports.handler = async function (event) {
     EnableVariations: false,
   });
 
-  /* ── Build Signature V4 ── */
-  const now      = new Date();
-  const dateTime = now.toISOString().replace(/[:-]|\.\d{3}/g, '').substring(0, 15) + 'Z';
+  /* ── Authenticate via OAuth 2.0 ── */
+  let accessToken;
+  try {
+    accessToken = await getAmazonOAuthToken(accessKey, secretKey);
+  } catch (err) {
+    console.error('[amazonSearch] OAuth token fetch failed:', err.message);
+    return {
+      statusCode: 401,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ error: 'Failed to authenticate with Amazon Creators API.', message: err.message, code: 'AUTH_FAILED' }),
+    };
+  }
 
   const paApiUrl = 'https://webservices.amazon.in/paapi5/searchitems';
 
-  const authHeaders = buildAuthHeader({
-    method:    'POST',
-    url:       paApiUrl,
-    body:      requestBody,
-    accessKey,
-    secretKey,
-    region,
-    service:   'ProductAdvertisingAPI',
-    dateTime,
-  });
+  const authHeaders = {
+    'Authorization': `Bearer ${accessToken}`,
+    'Content-Type': 'application/json; charset=UTF-8',
+    'X-Amz-Target': 'com.amazon.paapi5.v1.ProductAdvertisingAPIv1.SearchItems',
+    'Host': 'webservices.amazon.in',
+  };
 
   /* ── Call PA-API ── */
   let responseJson;

@@ -10,22 +10,7 @@
  *   test=true (performs a live test call to PA-API to verify validity/rate limit)
  */
 
-const crypto = require('crypto');
-
-function hmac(key, data) {
-  return crypto.createHmac('sha256', key).update(data).digest();
-}
-
-function hash(data) {
-  return crypto.createHash('sha256').update(data).digest('hex');
-}
-
-function getSigningKey(secretKey, dateStamp, region, service) {
-  const kDate    = hmac('AWS4' + secretKey, dateStamp);
-  const kRegion  = hmac(kDate, region);
-  const kService = hmac(kRegion, service);
-  return hmac(kService, 'aws4_request');
-}
+const { getAmazonOAuthToken } = require('./amazonAuth');
 
 exports.handler = async function (event) {
   const corsHeaders = {
@@ -75,34 +60,20 @@ exports.handler = async function (event) {
           ItemCount: 1,
         });
 
-        const now = new Date();
-        const dateTime = now.toISOString().replace(/[:-]|\.\d{3}/g, '').substring(0, 15) + 'Z';
-        const datestamp = dateTime.substring(0, 8);
+        let accessToken;
+        try {
+          accessToken = await getAmazonOAuthToken(accessKey, secretKey);
+        } catch (err) {
+          throw new Error('OAuth token request failed: ' + err.message);
+        }
+
         const paApiUrl = 'https://webservices.amazon.in/paapi5/searchitems';
-        const host = 'webservices.amazon.in';
-        const payloadHash = hash(requestBody);
-
-        const canonicalHeaders =
-          `content-encoding:amz-sdk-request\n` +
-          `content-type:application/json; charset=UTF-8\n` +
-          `host:${host}\n` +
-          `x-amz-date:${dateTime}\n` +
-          `x-amz-target:com.amazon.paapi5.v1.ProductAdvertisingAPIv1.SearchItems\n`;
-
-        const signedHeaders = 'content-encoding;content-type;host;x-amz-date;x-amz-target';
-        const canonicalRequest = ['POST', '/paapi5/searchitems', '', canonicalHeaders, signedHeaders, payloadHash].join('\n');
-        const credentialScope = `${datestamp}/${region}/ProductAdvertisingAPI/aws4_request`;
-        const stringToSign = ['AWS4-HMAC-SHA256', dateTime, credentialScope, hash(canonicalRequest)].join('\n');
-        const signingKey = getSigningKey(secretKey, datestamp, region, 'ProductAdvertisingAPI');
-        const signature = crypto.createHmac('sha256', signingKey).update(stringToSign).digest('hex');
 
         const headers = {
-          Authorization: `AWS4-HMAC-SHA256 Credential=${accessKey}/${credentialScope}, SignedHeaders=${signedHeaders}, Signature=${signature}`,
-          'Content-Encoding': 'amz-sdk-request',
+          'Authorization': `Bearer ${accessToken}`,
           'Content-Type': 'application/json; charset=UTF-8',
-          Host: host,
-          'X-Amz-Date': dateTime,
           'X-Amz-Target': 'com.amazon.paapi5.v1.ProductAdvertisingAPIv1.SearchItems',
+          'Host': 'webservices.amazon.in',
         };
 
         const res = await fetch(paApiUrl, { method: 'POST', headers, body: requestBody });
