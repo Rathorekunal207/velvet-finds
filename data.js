@@ -157,7 +157,7 @@ const VF = (() => {
     if (_cache && (now - _cacheTime) < CACHE_TTL) return _cache;
 
     try {
-      const res = await fetchWithTimeout(`${BASE_URL}/latest`, {
+      const res = await fetchWithTimeout(`${BASE_URL}/latest?t=${now}`, {
         headers: { 'X-Master-Key': API_KEY, 'Cache-Control': 'no-cache' }
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -284,7 +284,7 @@ const VF = (() => {
     if (_blogCache && (now - _blogCacheTime) < CACHE_TTL) return _blogCache;
 
     try {
-      const res = await fetchWithTimeout(`${BLOG_URL}/latest`, {
+      const res = await fetchWithTimeout(`${BLOG_URL}/latest?t=${now}`, {
         headers: { 'X-Master-Key': API_KEY, 'Cache-Control': 'no-cache' }
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
