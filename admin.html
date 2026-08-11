@@ -970,7 +970,10 @@
       ok = await VF.addProduct(data);
       ok ? toast('✅ New product live on ALL devices!') : toast('❌ Add failed — check connection', true);
     }
-    if (ok) clearForm();
+    if (ok) {
+      clearForm();
+      showTab('products');
+    }
   }
 
   function clearForm() {
