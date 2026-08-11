@@ -611,9 +611,53 @@
 
       <!-- ─── CATEGORIES MANAGEMENT TAB ─── -->
       <div class="tab-pane" id="tab-categories">
-        <h1>Shop by Category</h1>
-        <p class="subtitle">Manage which categories appear on your homepage.</p>
-        <div id="categoriesAdmin"></div>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+          <div>
+            <h1 style="margin-bottom:4px;">Shop by Category</h1>
+            <p class="subtitle" style="margin:0;">Manage categories, icons, and colors.</p>
+          </div>
+          <button class="admin-btn admin-btn-gold" onclick="openCategoryEditor()">+ Add Category</button>
+        </div>
+        
+        <div id="categoriesListAdmin" style="display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:16px; margin-bottom:40px;"></div>
+
+        <div id="categoryEditor" style="display:none; background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.08); border-radius:16px; padding:24px;">
+          <h2 id="catEditorTitle" style="font-size:18px; color:#e3c98a; margin-top:0;">Add New Category</h2>
+          <input type="hidden" id="editCatOldName">
+          <div class="form-grid">
+            <div class="form-group">
+              <label>Category Name *</label>
+              <input class="admin-input" id="catName" placeholder="e.g. Home Decor">
+            </div>
+            <div class="form-group">
+              <label>Gradient Background</label>
+              <select class="admin-input" id="catGradient">
+                <option value="linear-gradient(160deg,#e9c9c2,#3d2144)">Pink & Purple</option>
+                <option value="linear-gradient(160deg,#c9a15a,#e3c98a)">Gold</option>
+                <option value="linear-gradient(160deg,#e3c98a,#e9c9c2)">Gold & Pink</option>
+                <option value="linear-gradient(160deg,#3d2144,#2b1730)">Dark Plum</option>
+                <option value="linear-gradient(160deg,#c9a15a,#2b1730)">Gold & Plum</option>
+                <option value="linear-gradient(160deg,#3d2144,#8a7c7e)">Plum & Grey</option>
+              </select>
+            </div>
+            <div class="form-group full">
+              <label>Category Icon / Image (URL)</label>
+              <input class="admin-input" id="catImage" placeholder="https://..." oninput="updateCatPreview()">
+            </div>
+            <div class="form-group full">
+              <label>Or Upload Image</label>
+              <input type="file" id="catImageFile" accept="image/*" onchange="handleCatImageUpload(this)">
+            </div>
+          </div>
+          
+          <div style="margin-top:16px; display:flex; align-items:center; gap:16px;">
+            <div id="catPreview" style="width:60px; height:60px; border-radius:50%; background:var(--gold-100); border:2px solid var(--line); display:flex; align-items:center; justify-content:center; color:#fff; font-size:24px; font-weight:700;"></div>
+            <div style="display:flex; gap:12px; flex:1; justify-content:flex-end;">
+              <button class="admin-btn-sm abt-ghost" onclick="document.getElementById('categoryEditor').style.display='none'">Cancel</button>
+              <button class="admin-btn-sm abt-gold" onclick="saveCategoryAdmin()">💾 Save Category</button>
+            </div>
+          </div>
+        </div>
       </div>
 
       <!-- ─── AMAZON IMPORT TAB ─── -->
@@ -757,6 +801,117 @@
   }
   document.getElementById('passwordInput').addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
 
+  /* ── CATEGORY MANAGEMENT ── */
+  async function renderCategoriesAdmin() {
+    const list = document.getElementById('categoriesListAdmin');
+    if (!list) return;
+    list.innerHTML = '<div style="color:#e3c98a;">Loading categories...</div>';
+    const cats = await VF.getCategories();
+    list.innerHTML = '';
+    cats.forEach(c => {
+      const swatchStyle = c.image ? `background-image:url('${c.image}'); background-size:cover; background-position:center;` : `background:${c.gradient};`;
+      const swatchContent = c.image ? '' : c.name.charAt(0);
+      list.innerHTML += `
+        <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.05); border-radius:12px; padding:16px; display:flex; flex-direction:column; align-items:center; gap:12px;">
+          <div style="width:60px; height:60px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:24px; font-weight:700; color:#fff; ${swatchStyle}">${swatchContent}</div>
+          <span style="font-weight:700; color:#e3c98a;">${c.name}</span>
+          <div style="display:flex; gap:8px; width:100%;">
+            <button class="admin-btn-sm" style="flex:1; background:rgba(255,255,255,0.05); color:#fff;" onclick="editCategoryAdmin('${c.name}')">✏️ Edit</button>
+            <button class="admin-btn-sm abt-danger" style="padding:8px;" onclick="deleteCategoryAdmin('${c.name}')">🗑</button>
+          </div>
+        </div>
+      `;
+    });
+  }
+
+  function openCategoryEditor() {
+    document.getElementById('editCatOldName').value = '';
+    document.getElementById('catName').value = '';
+    document.getElementById('catGradient').value = 'linear-gradient(160deg,#e9c9c2,#3d2144)';
+    document.getElementById('catImage').value = '';
+    document.getElementById('catEditorTitle').textContent = 'Add New Category';
+    document.getElementById('categoryEditor').style.display = 'block';
+    updateCatPreview();
+    document.getElementById('categoryEditor').scrollIntoView({behavior:'smooth'});
+  }
+
+  async function editCategoryAdmin(name) {
+    const cats = await VF.getCategories();
+    const c = cats.find(x => x.name === name);
+    if (!c) return;
+    document.getElementById('editCatOldName').value = c.name;
+    document.getElementById('catName').value = c.name;
+    document.getElementById('catGradient').value = c.gradient || 'linear-gradient(160deg,#e9c9c2,#3d2144)';
+    document.getElementById('catImage').value = c.image || '';
+    document.getElementById('catEditorTitle').textContent = `✏️ Edit Category: ${c.name}`;
+    document.getElementById('categoryEditor').style.display = 'block';
+    updateCatPreview();
+    document.getElementById('categoryEditor').scrollIntoView({behavior:'smooth'});
+  }
+
+  async function deleteCategoryAdmin(name) {
+    if (!confirm(`Are you sure you want to delete the category "${name}"?`)) return;
+    toast('🗑 Deleting category...');
+    await VF.deleteCategory(name);
+    toast('✅ Category deleted!');
+    renderCategoriesAdmin();
+  }
+
+  function updateCatPreview() {
+    const preview = document.getElementById('catPreview');
+    const name = document.getElementById('catName').value || 'C';
+    const grad = document.getElementById('catGradient').value;
+    const img = document.getElementById('catImage').value;
+    
+    if (img) {
+      preview.style.background = `url('${img}') center/cover`;
+      preview.textContent = '';
+    } else {
+      preview.style.background = grad;
+      preview.textContent = name.charAt(0).toUpperCase();
+    }
+  }
+  
+  // Attach preview update to inputs
+  document.getElementById('catName').addEventListener('input', updateCatPreview);
+  document.getElementById('catGradient').addEventListener('change', updateCatPreview);
+
+  function handleCatImageUpload(input) {
+    if (input.files && input.files[0]) {
+      toast('⏳ Uploading image...');
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        document.getElementById('catImage').value = e.target.result;
+        updateCatPreview();
+        toast('✅ Image uploaded locally.');
+      };
+      reader.readAsDataURL(input.files[0]);
+    }
+  }
+
+  async function saveCategoryAdmin() {
+    const oldName = document.getElementById('editCatOldName').value;
+    const name = document.getElementById('catName').value.trim();
+    if (!name) return alert('Category Name is required.');
+    
+    const data = {
+      name: name,
+      gradient: document.getElementById('catGradient').value,
+      image: document.getElementById('catImage').value
+    };
+
+    toast('💾 Saving category...');
+    if (oldName) {
+      await VF.updateCategory(oldName, data);
+    } else {
+      const ok = await VF.addCategory(data);
+      if (!ok) return alert('Category already exists!');
+    }
+    toast('✅ Category saved successfully!');
+    document.getElementById('categoryEditor').style.display = 'none';
+    renderCategoriesAdmin();
+  }
+
   /* ─────── TABS ───────────────────────────────── */
   function showTab(tab) {
     document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
@@ -769,6 +924,7 @@
     if (tab === 'visitors') renderVisitorStats();
     if (tab === 'blogs') renderBlogListAdmin('');
     if (tab === 'settings') loadSettings();
+    if (tab === 'categories') renderCategoriesAdmin();
     if (tab === 'add') { clearForm(); document.getElementById('editorTitle').textContent = 'Add New Product'; }
     if (tab === 'add-blog') { if (!document.getElementById('editBlogId').value) clearBlogForm(); }
     if (tab === 'amazon') { loadPendingProducts(); }

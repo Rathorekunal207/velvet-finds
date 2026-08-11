@@ -9,6 +9,8 @@ const VF = (() => {
   /* ─── CONFIG & ENDPOINTS ───────────────────────────── */
   const BIN_ID      = '6a56efcff5f4af5e299070ef';
   const BLOG_BIN_ID = '6a64a48ef5f4af5e29bf65e7';
+  const CATEGORY_BIN_ID = '6a7b4e0ada38895dfed68d60';
+  const CATEGORY_URL = `https://api.jsonbin.io/v3/b/${CATEGORY_BIN_ID}`;
   const API_KEY     = '$2a$10$lnrM2bLmpuN/SdMJnc799e6JFz0R.QxWiwZ0D0cfGryIVViltJN2q';
   const BASE_URL    = `https://api.jsonbin.io/v3/b/${BIN_ID}`;
   const BLOG_URL    = `https://api.jsonbin.io/v3/b/${BLOG_BIN_ID}`;
@@ -20,6 +22,7 @@ const VF = (() => {
 
   const PRODUCTS_LS_KEY = 'vf_products_cache';
   const BLOGS_LS_KEY    = 'vf_blogs_cache';
+  const CATEGORY_LS_KEY = 'vf_category_cache';
   const FETCH_TIMEOUT_MS = 5000; // 5s timeout
 
   /* ─── DEFAULT SEED DATA (Never blank) ─────────────── */
@@ -436,37 +439,88 @@ const VF = (() => {
     { name: "Baby & Pet",    gradient: "linear-gradient(160deg,#e3c98a,#3d2144)", image: "images/mascot/hamster_heart_paws.jpg" },
     { name: "Premium Picks", gradient: "linear-gradient(160deg,#3d2144,#c9a15a)", image: "images/mascot/hamster_balloons.jpg" }
   ];
+  /* ─── CATEGORY HELPERS ─── */
+  function getLocalCategories() {
+    try {
+      const raw = localStorage.getItem(CATEGORY_LS_KEY);
+      return raw ? JSON.parse(raw) : defaultCategories;
+    } catch(e) { return defaultCategories; }
+  }
+  function saveLocalCategories(cats) {
+    try { localStorage.setItem(CATEGORY_LS_KEY, JSON.stringify(cats)); } catch(e){}
+  }
 
-  function initCategories() {
-    if (!localStorage.getItem(CATEGORIES_KEY)) {
-      localStorage.setItem(CATEGORIES_KEY, JSON.stringify(defaultCategories));
+  let _catCache = null;
+  let _catCacheTime = 0;
+
+  async function fetchCategories(force = false) {
+    if (!force && _catCache && (Date.now() - _catCacheTime < 300000)) return _catCache;
+    try {
+      const url = CATEGORY_URL + "?t=" + Date.now();
+      const res = await fetchWithTimeout(url, { headers: HEADERS });
+      if (!res.ok) throw new Error('Failed to fetch categories');
+      const data = await res.json();
+      let cats = Array.isArray(data.record) ? data.record : defaultCategories;
+      
+      // Seed with default categories if it's the first time
+      if (cats.length <= 1) {
+          cats = defaultCategories;
+          saveCategories(cats);
+      }
+      
+      _catCache = cats;
+      _catCacheTime = Date.now();
+      saveLocalCategories(cats);
+      return cats;
+    } catch (err) {
+      console.warn('[VF] Fallback to local categories:', err);
+      const local = getLocalCategories();
+      _catCache = local;
+      _catCacheTime = Date.now();
+      return local;
     }
   }
 
-  function getCategories() { return JSON.parse(localStorage.getItem(CATEGORIES_KEY) || '[]'); }
-  function saveCategories(cats) { localStorage.setItem(CATEGORIES_KEY, JSON.stringify(cats)); }
-
-  function addCategory(category) {
-    const cats = getCategories();
-    if (cats.some(c => c.name.toLowerCase() === category.name.toLowerCase())) return false;
-    cats.push(category);
-    saveCategories(cats);
-    return true;
+  async function saveCategories(cats) {
+    try {
+      const res = await fetchWithTimeout(CATEGORY_URL, {
+        method: 'PUT',
+        headers: HEADERS,
+        body: JSON.stringify(cats)
+      });
+      if (!res.ok) throw new Error('Save categories failed');
+      _catCache = cats;
+      _catCacheTime = Date.now();
+      saveLocalCategories(cats);
+      return true;
+    } catch (err) {
+      console.error('[VF] Save categories error:', err);
+      saveLocalCategories(cats);
+      _catCache = cats;
+      return false;
+    }
   }
 
-  function updateCategory(oldName, data) {
-    const cats = getCategories();
+  async function addCategory(category) {
+    const cats = await fetchCategories();
+    if (cats.some(c => c.name.toLowerCase() === category.name.toLowerCase())) return false;
+    cats.push(category);
+    return await saveCategories(cats);
+  }
+
+  async function updateCategory(oldName, data) {
+    const cats = await fetchCategories();
     const idx = cats.findIndex(c => c.name === oldName);
     if (idx > -1) {
       cats[idx] = { ...cats[idx], ...data };
-      saveCategories(cats);
-      return true;
+      return await saveCategories(cats);
     }
     return false;
   }
 
-  function deleteCategory(name) {
-    saveCategories(getCategories().filter(c => c.name !== name));
+  async function deleteCategory(name) {
+    const cats = await fetchCategories();
+    return await saveCategories(cats.filter(c => c.name !== name));
   }
 
   /* ─── SETTINGS ─────────────────────────────────────── */
@@ -491,11 +545,11 @@ const VF = (() => {
   function getSettings() { return JSON.parse(localStorage.getItem(SETTINGS_KEY) || '{}'); }
   function saveSettings(data) { localStorage.setItem(SETTINGS_KEY, JSON.stringify(data)); }
 
-  /* ─── INIT ─────────────────────────────────────────── */
+  /* ─── INIT ─── */
   function init() {
     initAnalytics();
     initSettings();
-    initCategories();
+    fetchCategories();
   }
 
   /* ─── PUBLIC API ────────────────────────────────────── */
@@ -505,7 +559,10 @@ const VF = (() => {
     updateProduct, updateProductStatus, deleteProduct,
     saveProducts, invalidateCache,
     getPendingProducts, getProductByAsin,
-    getCategories, saveCategories, addCategory, updateCategory, deleteCategory,
+    getCategories: fetchCategories,
+    addCategory,
+    updateCategory,
+    deleteCategory,
     getSettings, saveSettings,
     getBlogs, getBlog, addBlog, updateBlog, deleteBlog,
     generateSlug, invalidateBlogCache,

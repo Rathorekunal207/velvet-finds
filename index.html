@@ -247,34 +247,37 @@
   const lv = document.getElementById('liveVisitors');
   if (lv) lv.textContent = (a.totalVisits || 0).toLocaleString();
 
-  /* ── CATEGORIES (from localStorage, sync) ───────── */
-  const cats = VF.getCategories();
-  const catGrid = document.getElementById('catGrid');
-  if (catGrid) {
-    catGrid.innerHTML = '';
-    cats.forEach(cat => {
-      const swatchStyle = cat.image
-        ? `background-image:url('${cat.image}'); background-size:cover; background-position:center;`
-        : `background:${cat.gradient};`;
-      const swatchContent = cat.image ? '' : cat.name.charAt(0);
-      catGrid.innerHTML += `
-        <div class="cat-card" onclick="setFilter('${cat.name}',null); document.getElementById('shop').scrollIntoView({behavior:'smooth'})">
-          <div class="cat-swatch" style="${swatchStyle}">${swatchContent}</div>
-          <span>${cat.name}</span>
-        </div>`;
-    });
-  }
+  /* ── CATEGORIES (async fetch from cloud) ───────── */
+  async function renderCategories() {
+    const cats = await VF.getCategories();
+    const catGrid = document.getElementById('catGrid');
+    if (catGrid) {
+      catGrid.innerHTML = '';
+      cats.forEach(cat => {
+        const swatchStyle = cat.image
+          ? `background-image:url('${cat.image}'); background-size:cover; background-position:center;`
+          : `background:${cat.gradient};`;
+        const swatchContent = cat.image ? '' : cat.name.charAt(0);
+        catGrid.innerHTML += `
+          <div class="cat-card" onclick="setFilter('${cat.name}',null); document.getElementById('shop').scrollIntoView({behavior:'smooth'})">
+            <div class="cat-swatch" style="${swatchStyle}">${swatchContent}</div>
+            <span>${cat.name}</span>
+          </div>`;
+      });
+    }
 
-  /* ── FILTER BUTTONS ─────────────────────────────── */
+    /* ── FILTER BUTTONS ─────────────────────────────── */
+    const fbWrap = document.getElementById('filterBtns');
+    if (fbWrap) {
+      fbWrap.innerHTML = `<button class="filter-btn active" data-cat="All" onclick="setFilter('All',this)">All</button>`;
+      cats.forEach(cat => {
+        fbWrap.innerHTML += `<button class="filter-btn" data-cat="${cat.name}" onclick="setFilter('${cat.name}',this)">${cat.name}</button>`;
+      });
+    }
+  }
+  renderCategories();
+
   let activeFilter = 'All';
-  const fbWrap = document.getElementById('filterBtns');
-  if (fbWrap) {
-    fbWrap.innerHTML = `<button class="filter-btn active" data-cat="All" onclick="setFilter('All',this)">All</button>`;
-    cats.forEach(cat => {
-      fbWrap.innerHTML += `<button class="filter-btn" data-cat="${cat.name}" onclick="setFilter('${cat.name}',this)">${cat.name}</button>`;
-    });
-  }
-
   function setFilter(cat, btn) {
     activeFilter = cat;
     document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
