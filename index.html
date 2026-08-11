@@ -209,7 +209,7 @@
     const hs = document.getElementById('heroSub');
     if (hs) hs.textContent = s.heroSub;
   }
-  if (s.pinterestUrl) {
+  if (s.pinterestUrl && s.pinterestUrl !== '#') {
     const np = document.getElementById('navPinBtn');
     const hp = document.getElementById('heroPinBtn');
     const fp = document.getElementById('footPinBtn');

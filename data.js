@@ -477,7 +477,7 @@ const VF = (() => {
         tagline: "Curated Finds, Honest Reviews, Smart Shopping",
         heroHeading: "Aesthetic finds, chosen with care.",
         heroSub: "Every Pin, hand-picked and reviewed — so you never have to wonder if it's actually worth the click.",
-        pinterestUrl: "#", instagramUrl: "#",
+        pinterestUrl: "https://pin.it/608VLelQM", instagramUrl: "#",
         adminPassword: "velvetadmin",
         maintenanceMode: false, showNewsletter: true,
         logo: "velvet-finds-logo.jpeg",
