@@ -878,14 +878,32 @@
 
   function handleCatImageUpload(input) {
     if (input.files && input.files[0]) {
-      toast('⏳ Uploading image...');
+      toast('⏳ Processing and compressing image...');
+      const file = input.files[0];
       const reader = new FileReader();
       reader.onload = function(e) {
-        document.getElementById('catImage').value = e.target.result;
-        updateCatPreview();
-        toast('✅ Image uploaded locally.');
+        const img = new Image();
+        img.onload = function() {
+          const maxDim = 200; // Small size for category icons
+          let w = img.width;
+          let h = img.height;
+          if (w > maxDim || h > maxDim) {
+            if (w > h) { h = Math.round((h * maxDim) / w); w = maxDim; }
+            else { w = Math.round((w * maxDim) / h); h = maxDim; }
+          }
+          const canvas = document.createElement('canvas');
+          canvas.width = w;
+          canvas.height = h;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, w, h);
+          const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+          document.getElementById('catImage').value = dataUrl;
+          updateCatPreview();
+          toast('✅ Image compressed and uploaded.');
+        };
+        img.src = e.target.result;
       };
-      reader.readAsDataURL(input.files[0]);
+      reader.readAsDataURL(file);
     }
   }
 
