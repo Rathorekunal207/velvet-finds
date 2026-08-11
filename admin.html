@@ -894,6 +894,7 @@
   async function editProduct(id) {
     const p = await VF.getProduct(id);
     if (!p) return;
+    showTab('add');
     document.getElementById('editProductId').value = p.id;
     document.getElementById('pName').value = p.name || '';
     document.getElementById('pCategory').value = p.category || 'Fashion';
@@ -913,7 +914,6 @@
     handleImageUrlInput(p.image || '');
     updateGradientPreview();
     document.getElementById('editorTitle').textContent = `✏️ Editing: ${p.name}`;
-    showTab('add');
     document.getElementById('tab-add').scrollIntoView({ behavior:'smooth' });
   }
 
