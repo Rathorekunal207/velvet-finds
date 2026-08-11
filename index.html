@@ -318,11 +318,7 @@
       </div>`;
     card.addEventListener('click', () => {
       VF.recordProductClick(p.id);
-      if (p.affiliateLink) {
-        window.open(p.affiliateLink, '_blank', 'noopener,noreferrer,sponsored');
-      } else {
-        window.location.href = `product.html?id=${p.id}`;
-      }
+      window.location.href = `product.html?id=${p.id}`;
     });
     return card;
   }
