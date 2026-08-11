@@ -273,18 +273,55 @@
       cats.forEach(cat => {
         fbWrap.innerHTML += `<button class="filter-btn" data-cat="${cat.name}" onclick="setFilter('${cat.name}',this)">${cat.name}</button>`;
       });
+      // Add sub-filter container
+      if (!document.getElementById('subFilterBtns')) {
+        const subWrap = document.createElement('div');
+        subWrap.id = 'subFilterBtns';
+        subWrap.className = 'filter-row hide-scrollbar';
+        subWrap.style.marginTop = '12px';
+        subWrap.style.display = 'none';
+        fbWrap.parentNode.insertBefore(subWrap, fbWrap.nextSibling);
+      }
     }
   }
   renderCategories();
 
   let activeFilter = 'All';
+  let activeSubFilter = 'All';
   function setFilter(cat, btn) {
     activeFilter = cat;
+    activeSubFilter = 'All'; // reset subfilter on main filter change
     document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
     if (btn) btn.classList.add('active');
-    else { const fb = document.querySelector(`[data-cat="All"]`); if(fb) fb.classList.add('active'); }
+    else { const fb = document.querySelector(`[data-cat="${cat}"]`); if(fb) fb.classList.add('active'); }
+    
+    // Handle Fashion subcategories
+    const subWrap = document.getElementById('subFilterBtns');
+    if (subWrap) {
+      if (cat === 'Fashion') {
+        subWrap.style.display = 'flex';
+        subWrap.innerHTML = `
+          <button class="filter-btn active" style="font-size:12px; padding:6px 14px; margin-left: 20px;" onclick="setSubFilter('All', this)">All Fashion</button>
+          <button class="filter-btn" style="font-size:12px; padding:6px 14px;" onclick="setSubFilter('Men', this)">Men</button>
+          <button class="filter-btn" style="font-size:12px; padding:6px 14px;" onclick="setSubFilter('Women', this)">Women</button>
+        `;
+      } else {
+        subWrap.style.display = 'none';
+      }
+    }
+
     if (window.VelvetMascot) {
       VelvetMascot.render('#mascotHeroContainer', cat === 'All' ? 'home' : cat);
+    }
+    renderFeed(false);
+  }
+
+  function setSubFilter(subcat, btn) {
+    activeSubFilter = subcat;
+    const subWrap = document.getElementById('subFilterBtns');
+    if(subWrap) {
+      subWrap.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+      if(btn) btn.classList.add('active');
     }
     renderFeed(false);
   }
@@ -329,7 +366,12 @@
   function renderFeed(append = true) {
     if (!append) { feed.innerHTML = ''; batch = 0; }
     let products = allProducts.filter(p => p.status !== 'draft');
-    if (activeFilter !== 'All') products = products.filter(p => p.category === activeFilter);
+    if (activeFilter !== 'All') {
+      products = products.filter(p => p.category === activeFilter);
+      if (activeSubFilter !== 'All') {
+        products = products.filter(p => p.subcategory && p.subcategory.toLowerCase() === activeSubFilter.toLowerCase());
+      }
+    }
     const start = batch * 8;
     const slice = products.slice(start, start + 8);
     if (!slice.length) {

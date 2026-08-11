@@ -292,6 +292,10 @@
               </select>
             </div>
             <div class="form-group">
+              <label>Subcategory <small style="opacity:.5;">e.g. Men, Women</small></label>
+              <input id="pSubcategory" placeholder="Optional">
+            </div>
+            <div class="form-group">
               <label>Price (₹) *</label>
               <input id="pPrice" type="number" placeholder="1499">
             </div>
@@ -1118,6 +1122,7 @@
     const data = {
       name,
       category: document.getElementById('pCategory').value,
+      subcategory: document.getElementById('pSubcategory').value.trim() || null,
       price,
       originalPrice: parseFloat(document.getElementById('pOriginalPrice').value) || null,
       rating: parseFloat(document.getElementById('pRating').value) || 4.5,
