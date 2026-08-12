@@ -380,7 +380,22 @@
         <div class="wrap">
           <div class="article-layout">
             <div class="article-main">
-              <div id="articleContent" class="article-body">${blog.content || ''}</div>
+              <div id="articleContent" class="article-body">
+                ${blog.content || ''}
+                
+                ${(blog.listicleItems && blog.listicleItems.length > 0) ? `
+                  <div style="margin-top: 40px;">
+                    ${blog.listicleItems.map((item, idx) => `
+                      <div style="margin-bottom: 40px; padding-bottom: 30px; border-bottom: 1px solid var(--line);">
+                        ${item.title ? `<h2 style="font-family:var(--font-serif); font-size:24px; color:var(--plum-900); margin-bottom:15px;">${item.title}</h2>` : ''}
+                        ${item.img ? `<img src="${item.img}" alt="${item.title || 'Product'}" style="width:100%; border-radius:12px; margin-bottom:15px;">` : ''}
+                        ${item.desc ? `<p style="font-size:15px; color:var(--ink); line-height:1.6; margin-bottom:15px;">${item.desc}</p>` : ''}
+                        ${item.link ? `<a href="${item.link}" target="_blank" class="btn-gold" style="padding:10px 24px; font-size:14px; text-decoration:none; display:inline-block; border-radius:8px;">${item.btnText || 'Buy on Amazon'} →</a>` : ''}
+                      </div>
+                    `).join('')}
+                  </div>
+                ` : ''}
+              </div>
 
               <section style="margin-top:60px;padding-top:50px;border-top:2px solid var(--line);">
                 <h2 style="font-family:var(--font-serif);font-weight:450;font-size:28px;margin-bottom:8px;color:var(--ink);">🛍️ Shop The Look</h2>

@@ -465,7 +465,17 @@
               <textarea id="bContent" rows="14" style="font-family:monospace; font-size:13px; line-height:1.6;" placeholder="<h2>1. Section Title</h2><p>Write your article text here...</p>"></textarea>
             </div>
 
-            <div class="form-group full">
+            <!-- 🛍️ PRODUCT LISTICLE BUILDER -->
+            <div class="form-group full" style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.05); border-radius:12px; padding:20px; margin-top:10px;">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+                <div>
+                  <h3 style="font-family:var(--font-sans); font-size:16px; margin-bottom:4px;">Product List Builder (Optional)</h3>
+                  <p style="font-size:12px; color:rgba(232,228,240,0.5);">Add products to automatically generate a beautiful listicle below your article content.</p>
+                </div>
+                <button type="button" onclick="addListicleItem()" class="admin-btn-gold" style="padding:8px 16px; font-size:12px; border-radius:8px; border:none; cursor:pointer;">+ Add Product Block</button>
+              </div>
+              <div id="listicleBuilderContainer" style="display:flex; flex-direction:column; gap:16px;"></div>
+            </div>            <div class="form-group full">
               <label>Tags <small style="opacity:.5;">— comma separated</small></label>
               <input id="bTags" placeholder="home decor, interior design, trends 2026">
             </div>
@@ -1441,6 +1451,13 @@
     document.getElementById('bMetaTitle').value = b.metaTitle || '';
     document.getElementById('bMetaDesc').value = b.metaDescription || '';
     handleBlogImageUrlInput(b.coverImage || '');
+    
+    // Load listicle items
+    document.getElementById('listicleBuilderContainer').innerHTML = '';
+    if (b.listicleItems && b.listicleItems.length > 0) {
+      b.listicleItems.forEach(item => addListicleItem(item));
+    }
+
     document.getElementById('blogEditorTitle').textContent = `✏️ Editing: ${b.title}`;
     showTab('add-blog');
     document.getElementById('tab-add-blog').scrollIntoView({ behavior:'smooth' });
@@ -1465,9 +1482,23 @@
     const title = document.getElementById('bTitle').value.trim();
     const excerpt = document.getElementById('bExcerpt').value.trim();
     const content = document.getElementById('bContent').value.trim();
+    
+    // Extract Listicle Items
+    const listicleItems = [];
+    document.querySelectorAll('.listicle-block').forEach((block, idx) => {
+      const title = block.querySelector('.l-title').value.trim();
+      const desc = block.querySelector('.l-desc').value.trim();
+      const img = block.querySelector('.l-img').value.trim();
+      const link = block.querySelector('.l-link').value.trim();
+      const btn = block.querySelector('.l-btn').value.trim() || 'Buy on Amazon';
+      if (title || desc || link) {
+        listicleItems.push({ title, desc, img, link, btnText: btn });
+      }
+    });
+
     if (!title) { toast('❌ Blog Title is required', true); return; }
     if (!excerpt) { toast('❌ Excerpt is required', true); return; }
-    if (!content) { toast('❌ Article content is required', true); return; }
+    if (!content && listicleItems.length === 0) { toast('❌ Article content or listicle items are required', true); return; }
 
     const tagsRaw = document.getElementById('bTags').value;
     const tags = tagsRaw.split(',').map(t => t.trim()).filter(Boolean);
@@ -1487,6 +1518,7 @@
       excerpt,
       content,
       tags,
+      listicleItems,
       metaTitle: document.getElementById('bMetaTitle').value.trim() || title,
       metaDescription: document.getElementById('bMetaDesc').value.trim() || excerpt,
       recommendedProductCategories: recCats
@@ -1518,6 +1550,7 @@
     if (previewContainer) previewContainer.style.display = 'none';
     const status = document.getElementById('blogImageUploadStatus');
     if (status) status.textContent = '';
+    document.getElementById('listicleBuilderContainer').innerHTML = '';
     document.getElementById('blogEditorTitle').textContent = 'Add New Blog Post';
   }
 
@@ -1592,6 +1625,31 @@
       img.src = e.target.result;
     };
     reader.readAsDataURL(file);
+  }
+
+  // --- Listicle Builder ---
+  function addListicleItem(item = {}) {
+    const container = document.getElementById('listicleBuilderContainer');
+    const block = document.createElement('div');
+    block.className = 'listicle-block';
+    block.style.cssText = 'background:rgba(0,0,0,0.1); border:1px solid var(--line); border-radius:8px; padding:15px; position:relative;';
+    
+    block.innerHTML = `
+      <button type="button" onclick="this.parentElement.remove()" style="position:absolute; top:10px; right:10px; background:none; border:none; color:#ff8a80; cursor:pointer; font-size:16px;">🗑️</button>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:12px;">
+        <div><label style="font-size:11px;opacity:0.7;">Section Title</label><input class="l-title" placeholder="e.g. 1. Scented Candles" value="${item.title || ''}"></div>
+        <div><label style="font-size:11px;opacity:0.7;">Image URL (or Base64)</label><input class="l-img" placeholder="https://..." value="${item.img || ''}"></div>
+      </div>
+      <div style="margin-bottom:12px;">
+        <label style="font-size:11px;opacity:0.7;">Description</label>
+        <textarea class="l-desc" rows="2" placeholder="Write about this product...">${item.desc || ''}</textarea>
+      </div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+        <div><label style="font-size:11px;opacity:0.7;">Affiliate Link</label><input class="l-link" placeholder="https://link.amazon/..." value="${item.link || ''}"></div>
+        <div><label style="font-size:11px;opacity:0.7;">Button Text</label><input class="l-btn" placeholder="Buy on Amazon" value="${item.btnText || 'Buy on Amazon'}"></div>
+      </div>
+    `;
+    container.appendChild(block);
   }
 
   /* ─────── TOAST ───────────────────────────── */
