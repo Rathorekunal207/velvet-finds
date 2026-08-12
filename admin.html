@@ -8,6 +8,7 @@
   <link rel="stylesheet" href="styles.css">
   <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
   <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/quill-image-resize-module@3.0.0/image-resize.min.js"></script>
   <style>
     body { background:#111318; }
     .page { display:none; }
@@ -1482,7 +1483,11 @@
   async function saveBlogAdmin() {
     const title = document.getElementById('bTitle').value.trim();
     const excerpt = document.getElementById('bExcerpt').value.trim();
-    const content = document.getElementById('bContent').value.trim();
+    let content = document.getElementById('bContent').value.trim();
+    if (window.quill) {
+      content = window.quill.root.innerHTML.trim();
+      if (content === '<p><br></p>') content = '';
+    }
     
     // Extract Listicle Items
     const listicleItems = [];
@@ -2252,11 +2257,7 @@
       ['clean']                                         // remove formatting button
     ];
 
-    window.quill = new Quill('#editor-container', {
-      modules: { toolbar: toolbarOptions },
-      theme: 'snow',
-      placeholder: 'Write your beautiful article here...'
-    });
+    
     
     // Optional: Style the toolbar to match dark theme slightly
     const toolbar = document.querySelector('.ql-toolbar');
@@ -2270,3 +2271,6 @@
 </script>
 </body>
 </html>
+
+
+
