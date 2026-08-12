@@ -1208,7 +1208,7 @@
     reader.onload = function(e) {
       const img = new Image();
       img.onload = function() {
-        const maxDim = 800;
+        const maxDim = 400; // Aggressive compression for JSONBin limits
         let w = img.width;
         let h = img.height;
         if (w > maxDim || h > maxDim) {
@@ -1222,7 +1222,7 @@
         const ctx = canvas.getContext('2d');
         ctx.drawImage(img, 0, 0, w, h);
 
-        const dataUrl = canvas.toDataURL('image/jpeg', 0.75);
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.5); // Low quality to ensure tiny size
         document.getElementById('pImage').value = dataUrl;
         
         // Show preview
@@ -1562,20 +1562,34 @@
     const file = input.files[0];
     const status = document.getElementById('blogImageUploadStatus');
     if (!file) return;
-    if (file.size > 2 * 1024 * 1024) {
-      status.textContent = '❌ Image too large (max 2MB)';
-      status.style.color = '#ff8a80';
-      return;
-    }
-    status.textContent = '⏳ Processing image…';
+    status.textContent = '⏳ Processing and compressing image…';
     status.style.color = '#e3c98a';
+    
     const reader = new FileReader();
     reader.onload = function(e) {
-      const base64 = e.target.result;
-      document.getElementById('bCoverImage').value = base64;
-      handleBlogImageUrlInput(base64);
-      status.textContent = '✅ Image ready!';
-      status.style.color = '#27a55b';
+      const img = new Image();
+      img.onload = function() {
+        const maxDim = 600; // Aggressive compression for JSONBin limits
+        let w = img.width;
+        let h = img.height;
+        if (w > maxDim || h > maxDim) {
+          if (w > h) { h = Math.round((h * maxDim) / w); w = maxDim; }
+          else { w = Math.round((w * maxDim) / h); h = maxDim; }
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = w;
+        canvas.height = h;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, w, h);
+        
+        // Use high compression to keep base64 string very small
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.5);
+        document.getElementById('bCoverImage').value = dataUrl;
+        handleBlogImageUrlInput(dataUrl);
+        status.textContent = '✅ Image ready (Compressed)';
+        status.style.color = '#27a55b';
+      };
+      img.src = e.target.result;
     };
     reader.readAsDataURL(file);
   }
